@@ -1,69 +1,143 @@
-# React + TypeScript + Vite
+# MEV Detection Dashboard - DETECTION ONLY
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Ultra-Sophisticated Frontend for MEV Detection System
 
-Currently, two official plugins are available:
+This is a **DETECTION-ONLY** interface with NO execution capabilities. It provides real-time visualization and analysis of MEV patterns on Solana.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Features
 
-## Expanding the ESLint configuration
+#### 🎯 Entity Behavioral Spectrum
+- Interactive radar charts showing attack profiles
+- Surgical vs Shotgun style visualization
+- Risk appetite heat maps with WebGL acceleration
+- Fee posture distribution graphs
+- Uptime/cadence pattern analysis
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+#### 🚨 Detection Stream
+- Real-time sandwich detection alerts
+- Color-coded severity levels (LOW/MEDIUM/HIGH/CRITICAL)
+- Transaction flow animations with React Flow
+- Victim/attacker relationship graphs
+- Live WebSocket updates with 15ms batching
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+#### 🧠 Model Performance
+- ROC curves for each model layer
+- Confusion matrices with live updates
+- Latency histograms (P50/P95/P99)
+- Model ensemble voting visualization
+- Performance target indicators
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+#### 🧬 Decision DNA Explorer
+- 3D Merkle tree visualization using Three.js
+- Ed25519 signature verification display
+- Audit trail timeline
+- Feature hash explorer
+- Daily Merkle anchor status
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Monitored Entities
+
+The dashboard focuses on these key addresses:
+- `B91piBSfCBRs5rUxCMRdJEGv7tNEnFxweWcdQJHJoFpi`
+- `6gAnjderE13TGGFeqdPVQ438jp2FPVeyXAszxKu9y338`
+- `E6YoRP3adE5XYneSseLee15wJshDxCsmyD2WtLvAmfLi`
+- `CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C` (Raydium)
+- `pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA` (PumpSwap)
+
+### Performance
+
+- **60 FPS** with 10,000+ data points
+- **<500KB** initial bundle size
+- **WebWorker** for heavy computations
+- **Virtual scrolling** for large datasets
+- **Optimistic UI updates**
+- **Binary protobuf** message handling
+
+### Tech Stack
+
+- **React 18** with TypeScript
+- **Vite** for blazing fast builds
+- **Three.js/React Three Fiber** for 3D visualizations
+- **D3.js** for complex charts
+- **ECharts** for performance metrics
+- **React Flow** for node graphs
+- **Framer Motion** for animations
+- **Socket.io** for real-time updates
+- **Protobuf** for binary messages
+- **Valtio** for state management
+- **Comlink** for WebWorker communication
+
+### Running the Dashboard
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server (port 4001)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### API Integration
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The dashboard connects to:
+- **FastAPI Backend**: `http://localhost:8000`
+- **WebSocket**: `ws://localhost:4000/ws`
+- **ClickHouse** queries via API
+- **ONNX model** inference results
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### UI/UX Features
+
+- **Cyberpunk-inspired dark theme**
+- **Gradient accents** (#00ff41 to #00ffff)
+- **Glass morphism effects**
+- **Smooth transitions** and micro-interactions
+- **Keyboard shortcuts** for power users
+- **Multi-monitor support**
+- **Custom scrollbars** with neon glow
+- **Responsive layout** for all screen sizes
+
+### Security
+
+- **100% DETECTION-ONLY** - No execution capabilities
+- **Read-only access** to blockchain data
+- **No wallet connections**
+- **No transaction signing**
+- **No private key handling**
+
+### Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Performance Optimizations
+
+1. **React.memo** for expensive components
+2. **useMemo/useCallback** for computation caching
+3. **Virtual scrolling** for large lists
+4. **WebWorker** for heavy computations
+5. **Message batching** (15ms windows)
+6. **Lazy loading** for code splitting
+7. **Binary protobuf** for smaller payloads
+
+### Monitoring Capabilities
+
+- Real-time MEV detection with <20ms latency
+- Behavioral pattern recognition
+- Attack style classification
+- Venue migration tracking
+- Coordinated actor clustering
+- ML confidence scoring
+- Decision lineage tracking
+
+This dashboard provides operators with immediate visibility into MEV patterns while maintaining 100% detection-only functionality.
+
+---
+
+**Built for Detection. Optimized for Performance. Designed for Clarity.**
