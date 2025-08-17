@@ -1,7 +1,7 @@
 import { API_BASE } from '../../config/env';
 
 async function get<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { headers: { 'accept': 'application/json' }, ...init });
+  const res = await fetch(`${API_BASE}${path}`, { headers: { accept: 'application/json' }, ...init });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
