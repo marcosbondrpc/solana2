@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": false
+  },
+  "files": [
+    "src/config/env.ts",
+    "src/flags.ts",
+    "src/components/nav/OpsNav.tsx",
+    "src/layouts/OpsLayout.tsx",
+    "src/routes/ops/routes.tsx",
+    "src/routes/ops/index.tsx",
+    "src/routes/ops/node.tsx",
+    "src/routes/ops/scraper.tsx",
+    "src/routes/ops/arbitrage.tsx",
+    "src/routes/ops/mev.tsx",
+    "src/routes/ops/stats.tsx",
+    "src/routes/ops/config.tsx"
+  ]
+}
