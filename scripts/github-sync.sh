@@ -50,7 +50,7 @@ else
 fi
 
 # Restart services if core files changed
-if git diff HEAD~1 --name-only 2>/dev/null | grep -qE "(backend/|frontend2/|Cargo.toml|package.json)"; then
+if git diff HEAD~1 --name-only 2>/dev/null | grep -qE "(backend/|frontend/|Cargo.toml|package.json)"; then
     echo "[$(date)] Core files changed, considering restart..." >> $LOG_FILE
     
     # Restart backend if needed
@@ -61,10 +61,10 @@ if git diff HEAD~1 --name-only 2>/dev/null | grep -qE "(backend/|frontend2/|Carg
     fi
     
     # Restart frontend if needed
-    if git diff HEAD~1 --name-only 2>/dev/null | grep -q "frontend2/"; then
+    if git diff HEAD~1 --name-only 2>/dev/null | grep -q "frontend/"; then
         echo "[$(date)] Restarting frontend..." >> $LOG_FILE
         pkill -f "npm run dev" 2>/dev/null || true
-        cd /home/kidgordones/0solana/solana2/frontend2
+        cd /home/kidgordones/0solana/solana2/frontend
         nohup npm run dev -- --port 3001 > /tmp/frontend.log 2>&1 &
     fi
 fi
