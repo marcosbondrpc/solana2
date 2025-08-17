@@ -12,6 +12,7 @@ from .routers import metrics as metrics_router
 from . import ws as ws_router
 from . import sse as sse_router
 from .deps import get_ch
+from .metrics import router as prom_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,3 +38,4 @@ app.include_router(entities_router.router)
 app.include_router(metrics_router.router)
 app.include_router(ws_router.router)
 app.include_router(sse_router.router)
+app.include_router(prom_router)

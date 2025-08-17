@@ -1,0 +1,24 @@
+[Unit]
+Description=Solana Realtime API (Uvicorn)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/solana-realtime/uvicorn.env
+WorkingDirectory=/opt/solana-realtime/app
+ExecStart=/usr/bin/env bash -lc '\
+  exec uvicorn backend.app.main:app \
+    --host ${HOST:-0.0.0.0} \
+    --port ${PORT:-8080} \
+    --workers ${UVICORN_WORKERS:-4} \
+    --http httptools --loop uvloop \
+    --log-level ${UVICORN_LOG_LEVEL:-info} \
+'
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

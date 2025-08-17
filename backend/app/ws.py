@@ -5,6 +5,7 @@ import anyio
 import msgpack
 import time
 from .security.ws_tokens import verify_ws_token
+from .metrics import WS_CLIENTS, WS_BACKLOG, WS_DROPS
 
 router = APIRouter()
 Seq = int
@@ -54,7 +55,15 @@ async def _enqueue(pkt: bytes, seq: Seq) -> None:
 				q.popleft()
 			except Exception:
 				pass
+			try:
+				WS_DROPS.inc()
+			except Exception:
+				pass
 		q.append(pkt)
+		try:
+			WS_BACKLOG.labels(client_id=str(id(ws))).set(len(q))
+		except Exception:
+			pass
 
 def _replay_from(last_seq: Seq) -> Tuple[bool, List[bytes]]:
 	if not _ring:
@@ -87,6 +96,11 @@ async def ws_endpoint(ws: WebSocket, token: Optional[str] = Query(default=None))
 	CLIENTS[ws] = q
 	NOTICE_TS[ws] = 0.0
 	try:
+		try:
+			WS_CLIENTS.inc()
+			WS_BACKLOG.labels(client_id=str(id(ws))).set(0)
+		except Exception:
+			pass
 		async with anyio.create_task_group() as tg:
 			tg.start_soon(_sender_loop, ws, q)
 			tg.start_soon(_heartbeat_loop, ws)
@@ -121,7 +135,15 @@ async def ws_endpoint(ws: WebSocket, token: Optional[str] = Query(default=None))
 								q.popleft()
 							except Exception:
 								pass
+							try:
+								WS_DROPS.inc()
+							except Exception:
+								pass
 						q.append(pkt)
+						try:
+							WS_BACKLOG.labels(client_id=str(id(ws))).set(len(q))
+						except Exception:
+							pass
 					hello = _pack({"t": "hello", "ts": int(time.time() * 1000), "seq": 0, "data": {"heartbeat_ms": 10000}})
 					q.append(hello)
 					subscribed = True
@@ -134,6 +156,11 @@ async def ws_endpoint(ws: WebSocket, token: Optional[str] = Query(default=None))
 	finally:
 		CLIENTS.pop(ws, None)
 		NOTICE_TS.pop(ws, None)
+		try:
+			WS_CLIENTS.dec()
+			WS_BACKLOG.remove(str(id(ws)))
+		except Exception:
+			pass
 
 async def _sender_loop(ws: WebSocket, q: ClientQ):
 	while True:
