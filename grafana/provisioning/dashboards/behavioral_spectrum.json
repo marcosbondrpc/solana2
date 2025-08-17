@@ -1,0 +1,99 @@
+{
+  "dashboard": {
+    "title": "MEV Behavioral Spectrum - DETECTION ONLY",
+    "uid": "behavioral-spectrum",
+    "version": 1,
+    "timezone": "utc",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Attack Style Distribution",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "rawSql": "SELECT attack_style as metric, COUNT(*) as value FROM ch.entity_profile WHERE day >= today() - 30 GROUP BY attack_style",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Entity Landing Rates",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "rawSql": "SELECT toStartOfHour(ts) as time, entity, avg(bundle_like) as landing_rate FROM ch.sandwiches WHERE slot >= subtractDays(now(), 7) GROUP BY time, entity ORDER BY time",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Latency P95-P50 Spread",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "rawSql": "SELECT entity, toStartOfHour(ts) as time, (quantileExact(0.95)(dt_front_to_victim_ms) - quantileExact(0.5)(dt_front_to_victim_ms)) as spread FROM ch.sandwiches GROUP BY entity, time",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Venue Migration Flow",
+        "type": "sankey",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "rawSql": "SELECT venue_from, venue_to, COUNT(*) as flow FROM ch.venue_migrations WHERE day >= today() - 30 GROUP BY venue_from, venue_to",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Risk Appetite Score",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "rawSql": "SELECT entity, avg(failure_rate) as risk_score FROM ch.entity_profile WHERE entity IN (SELECT DISTINCT entity FROM ch.focus_entities) GROUP BY entity",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Fee Posture Distribution",
+        "type": "histogram",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 16},
+        "targets": [
+          {
+            "rawSql": "SELECT priority_fee, COUNT(*) as frequency FROM ch.sandwiches WHERE slot >= subtractDays(now(), 1) GROUP BY priority_fee",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Wallet Fleet Coordination",
+        "type": "nodegraph",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "rawSql": "SELECT wallet1, wallet2, correlation_score FROM ch.wallet_correlations WHERE abs(correlation_score) > 0.7",
+            "format": "table"
+          }
+        ]
+      }
+    ],
+    "refresh": "10s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "dashboard": {
+    "title": "MEV Economic Impact - DETECTION ONLY",
+    "uid": "economic-impact",
+    "version": 1,
+    "timezone": "utc",
+    "panels": [
+      {
+        "id": 1,
+        "title": "7/30/90 Day SOL Extraction",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+        "targets": [
+          {
+            "rawSql": "SELECT '7d' as period, sum(extracted_sol) as value FROM ch.victim_loss WHERE ts >= now() - INTERVAL 7 DAY UNION ALL SELECT '30d', sum(extracted_sol) FROM ch.victim_loss WHERE ts >= now() - INTERVAL 30 DAY UNION ALL SELECT '90d', sum(extracted_sol) FROM ch.victim_loss WHERE ts >= now() - INTERVAL 90 DAY",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Top Extractors by SOL",
+        "type": "bargauge",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+        "targets": [
+          {
+            "rawSql": "SELECT attacker as entity, sum(extracted_sol) as total_sol FROM ch.victim_loss WHERE ts >= now() - INTERVAL 30 DAY GROUP BY attacker ORDER BY total_sol DESC LIMIT 10",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Cumulative Extraction Timeline",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 16, "x": 16, "y": 0},
+        "targets": [
+          {
+            "rawSql": "SELECT toStartOfDay(ts) as time, entity, sum(extracted_sol) OVER (PARTITION BY entity ORDER BY toStartOfDay(ts)) as cumulative_sol FROM ch.victim_loss WHERE entity IN ('B91piBSfCBRs5rUxCMRdJEGv7tNEnFxweWcdQJHJoFpi', '6gAnjderE13TGGFeqdPVQ438jp2FPVeyXAszxKu9y338', 'E6YoRP3adE5XYneSseLee15wJshDxCsmyD2WtLvAmfLi') GROUP BY time, entity",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Tip/Fee Burden Analysis",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "rawSql": "SELECT toStartOfDay(ts) as time, sum(tip_lamports)/1e9 as tips_sol, sum(priority_fee) as fees_sol FROM ch.sandwiches WHERE ts >= now() - INTERVAL 30 DAY GROUP BY time",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Congestion Externalities",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "rawSql": "SELECT slot, countIf(success=0) as failed_txs, countIf(has_sandwich=1) as sandwich_slots FROM ch.tx_stream WHERE slot >= subtractDays(now(), 1) GROUP BY slot",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Victim Impact Distribution",
+        "type": "heatmap",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "rawSql": "SELECT toStartOfHour(ts) as time, extracted_sol, COUNT(*) as victims FROM ch.victim_loss WHERE ts >= now() - INTERVAL 24 HOUR GROUP BY time, extracted_sol",
+            "format": "time_series"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Market Concentration (HHI)",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "rawSql": "WITH market_share AS (SELECT entity, sum(extracted_sol) / (SELECT sum(extracted_sol) FROM ch.victim_loss WHERE ts >= now() - INTERVAL 30 DAY) as share FROM ch.victim_loss WHERE ts >= now() - INTERVAL 30 DAY GROUP BY entity) SELECT sum(share * share * 10000) as hhi FROM market_share",
+            "format": "table"
+          }
+        ],
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {"color": "green", "value": 0},
+            {"color": "yellow", "value": 1500},
+            {"color": "red", "value": 2500}
+          ]
+        }
+      }
+    ],
+    "refresh": "30s",
+    "time": {
+      "from": "now-7d",
+      "to": "now"
+    }
+  }
+}
