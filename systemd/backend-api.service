@@ -6,11 +6,10 @@ After=network-online.target
 [Service]
 Type=simple
 User=solana2
-WorkingDirectory=/home/kidgordones/0solana/solana2
+WorkingDirectory=/home/kidgordones/0solana/solana2/api
 EnvironmentFile=/home/kidgordones/0solana/solana2/configs/backend.env
 Environment=PYTHONUNBUFFERED=1
-Environment=PYTHONPATH=/home/kidgordones/0solana/solana2/api:/home/kidgordones/0solana/solana2
-ExecStart=/usr/bin/python3 -m uvicorn api.main:app --host 0.0.0.0 --port 8080 --workers 4 --http httptools --loop uvloop --log-level info
+ExecStart=/usr/bin/python3 -m uvicorn main:app --host 0.0.0.0 --port 8080 --workers 4 --http httptools --loop uvloop --log-level info
 Restart=always
 RestartSec=5
 TimeoutStartSec=30
