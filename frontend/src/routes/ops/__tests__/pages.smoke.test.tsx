@@ -42,18 +42,18 @@ describe('Ops pages smoke', () => {
   });
   it('renders Arbitrage page', () => {
     renderRoute('/ops/arbitrage');
-    expect(screen.getByText(/Opportunities|Filters/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Opportunities|Filters/i).length).toBeGreaterThan(0);
   });
   it('renders MEV page', () => {
     renderRoute('/ops/mev');
-    expect(screen.getByText(/Bundles|Alerts|Profit/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Bundles|Alerts|Profit/i).length).toBeGreaterThan(0);
   });
   it('renders Stats page', () => {
     renderRoute('/ops/stats');
-    expect(screen.getByText(/TPS|Latency|Top/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/TPS|Latency|Top/i).length).toBeGreaterThan(0);
   });
   it('renders Config page', () => {
     renderRoute('/ops/config');
-    expect(screen.getByText(/Endpoints|Thresholds|Feature Flags/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Endpoints|Thresholds|Feature Flags/i).length).toBeGreaterThan(0);
   });
 });
