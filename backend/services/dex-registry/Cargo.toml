@@ -1,0 +1,57 @@
+[package]
+name = "dex-registry"
+version = "1.0.0"
+edition = "2021"
+authors = ["MEV Team"]
+
+[dependencies]
+# Core dependencies
+tokio = { workspace = true }
+bytes = { workspace = true }
+parking_lot = { workspace = true }
+arc-swap = { workspace = true }
+dashmap = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+# Solana
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+anchor-lang = "0.30"
+spl-token = "6.0"
+spl-associated-token-account = "5.0"
+
+# Graph and algorithms
+petgraph = "0.6"
+indexmap = { workspace = true }
+priority-queue = "2.1"
+ahash = { workspace = true }
+
+# Math
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+rust_decimal = { workspace = true }
+ethnum = { workspace = true }
+
+# Performance
+rayon = "1.10"
+crossbeam = { workspace = true }
+once_cell = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+borsh = { workspace = true }
+
+# Metrics
+prometheus = { workspace = true }
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.5"
+
+[[bench]]
+name = "pricing_bench"
+harness = false

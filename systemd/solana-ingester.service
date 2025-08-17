@@ -1,0 +1,41 @@
+[Unit]
+Description=Solana Yellowstone gRPC Ingester
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=solana
+Group=solana
+WorkingDirectory=/home/kidgordones/0solana/solana2/backend/services/historical-data/rust-ingester
+
+Environment="RUST_LOG=info"
+Environment="Y_GRPC=http://127.0.0.1:10000"
+Environment="KAFKA_BROKERS=127.0.0.1:9092"
+Environment="PROMETHEUS_PORT=9090"
+
+ExecStartPre=/usr/bin/cargo build --release
+ExecStart=/home/kidgordones/0solana/solana2/backend/services/historical-data/rust-ingester/target/release/solana-ingester
+
+# Resource limits
+LimitNOFILE=262144
+LimitNPROC=32768
+LimitCORE=infinity
+
+# CPU affinity for performance
+CPUAffinity=0-7
+CPUWeight=200
+
+# Memory limits
+MemoryHigh=4G
+MemoryMax=6G
+
+# Kill settings
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

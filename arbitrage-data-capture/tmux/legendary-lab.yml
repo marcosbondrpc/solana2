@@ -1,0 +1,268 @@
+# LEGENDARY MEV Infrastructure Tmuxinator Cockpit
+# Ultra-optimized for institutional-scale MEV extraction
+# CPU pinning + RT scheduling + verbose monitoring
+
+name: legendary-lab
+root: /home/kidgordones/0solana/node/arbitrage-data-capture
+
+env:
+  KAFKA_BROKERS: "${KAFKA_BROKERS:-localhost:9092}"
+  CLICKHOUSE_URL: "${CLICKHOUSE_URL:-http://localhost:8123}"
+  GRAFANA_URL: "${GRAFANA_URL:-http://localhost:3000}"
+  RUST_LOG: "trace"                      # Maximum verbosity for debugging
+  RUST_BACKTRACE: "full"
+  TOKIO_UNSTABLE: "1"                   # Enable tokio console debugging
+  SOLANA_RPC: "${SOLANA_RPC:-https://api.mainnet-beta.solana.com}"
+  JITO_URL: "${JITO_URL:-https://mainnet.block-engine.jito.wtf}"
+  REDIS_URL: "${REDIS_URL:-redis://localhost:6379}"
+  INFLUX_URL: "${INFLUX_URL:-http://localhost:8086}"
+  
+  # Performance tuning
+  TOKIO_WORKER_THREADS: "16"
+  TOKIO_MAX_THREADS: "512"
+  UV_THREADPOOL_SIZE: "16"
+  
+  # MEV specific
+  MIN_PROFIT_USD: "10"
+  MAX_GAS_PRICE_GWEI: "100"
+  BUNDLE_TIMEOUT_MS: "100"
+  FLASHLOAN_GAS_LIMIT: "5000000"
+
+pre_window: |
+  export RUST_LOG=${RUST_LOG}
+  ulimit -n 1048576 || true              # Max file descriptors
+  ulimit -l unlimited || true            # Unlimited locked memory
+  sudo sysctl -w net.core.rmem_max=134217728 2>/dev/null || true
+  sudo sysctl -w net.core.wmem_max=134217728 2>/dev/null || true
+  sudo sysctl -w net.ipv4.tcp_rmem="4096 87380 134217728" 2>/dev/null || true
+  sudo sysctl -w net.ipv4.tcp_wmem="4096 65536 134217728" 2>/dev/null || true
+
+windows:
+  # System monitoring and infrastructure health
+  - infra:
+      layout: tiled
+      panes:
+        - watch -n0.5 'date "+%Y-%m-%d %H:%M:%S.%3N"; echo; uptime; echo; free -m; echo "CPU MHz:"; grep MHz /proc/cpuinfo | head -4; echo; ss -su state established | wc -l'
+        - sudo journalctl -fu envoy-h3.service 2>/dev/null || journalctl -fu envoy-h3.service
+        - htop -d 5
+        - iostat -x 1
+  
+  # ClickHouse monitoring
+  - clickhouse:
+      layout: even-horizontal
+      panes:
+        - |
+          clickhouse-client --multiline --multiquery --query "
+          SHOW DATABASES;
+          SELECT name, engine, total_rows, total_bytes FROM system.tables WHERE database='default';
+          "
+        - |
+          watch -n2 'clickhouse-client --query "
+          SELECT 
+            table,
+            formatReadableSize(sum(bytes)) as size,
+            sum(rows) as rows,
+            max(modification_time) as last_modified
+          FROM system.parts
+          WHERE active AND database=currentDatabase()
+          GROUP BY table
+          ORDER BY sum(bytes) DESC
+          "'
+  
+  # Kafka monitoring
+  - kafka:
+      layout: main-vertical
+      panes:
+        - |
+          bash -lc 'kcat -b ${KAFKA_BROKERS} -L; echo; 
+          kafka-consumer-groups.sh --bootstrap-server ${KAFKA_BROKERS} --list;
+          exec bash'
+        - |
+          watch -n2 'kafka-consumer-groups.sh --bootstrap-server ${KAFKA_BROKERS} --describe --all-groups 2>/dev/null | head -50'
+  
+  # MEV Control API (CPU cores 10-11, RT priority 10)
+  - api:
+      layout: even-horizontal
+      panes:
+        - |
+          bash -lc 'cd api && \
+          taskset -c 10-11 \
+          nice -n -5 \
+          chrt -f 10 \
+          uvicorn main:app \
+            --host 0.0.0.0 \
+            --port 8080 \
+            --workers 4 \
+            --loop uvloop \
+            --log-level trace \
+            --access-log \
+            |& tee /tmp/api.lab.log | \
+            jq -R "fromjson? // {raw: .}" 2>/dev/null || cat'
+        - tail -F /tmp/api.lab.log | grep -E "ERROR|WARN|profit|bundle"
+  
+  # MEV Agent (CPU cores 2-3, RT priority 30 - highest)
+  - mev:
+      layout: even-horizontal
+      panes:
+        - |
+          bash -lc 'taskset -c 2-3 \
+          nice -n -20 \
+          chrt -f 30 \
+          ./target/release/mev_agent \
+            --network mainnet \
+            --strategy aggressive \
+            --min-profit ${MIN_PROFIT_USD} \
+            --verbose \
+            |& tee /tmp/mev_agent.lab.log | \
+            ts "[%Y-%m-%d %H:%M:%.S]"'
+        - |
+          tail -F /tmp/mev_agent.lab.log | \
+          grep -E --color=always "PROFIT|SANDWICH|LIQUIDATION|BUNDLE|ERROR" | \
+          ts "[%H:%M:%.S]"
+  
+  # Arbitrage Agent (CPU cores 4-5, RT priority 30)
+  - arb:
+      layout: even-horizontal
+      panes:
+        - |
+          bash -lc 'taskset -c 4-5 \
+          nice -n -20 \
+          chrt -f 30 \
+          ./target/release/arb_agent \
+            --pairs all \
+            --min-profit-usd ${MIN_PROFIT_USD} \
+            --flashloan-enabled \
+            --multi-hop \
+            --verbose \
+            |& tee /tmp/arb_agent.lab.log | \
+            ts "[%Y-%m-%d %H:%M:%.S]"'
+        - |
+          tail -F /tmp/arb_agent.lab.log | \
+          grep -E --color=always "OPPORTUNITY|EXECUTED|PROFIT|PATH|ERROR" | \
+          ts "[%H:%M:%.S]"
+  
+  # Ingestors (CPU cores 6-9)
+  - ingestors:
+      layout: tiled
+      panes:
+        - |
+          bash -lc 'taskset -c 6 \
+          nice -n -10 \
+          ./target/release/control_acks_ingestor \
+            --kafka-brokers ${KAFKA_BROKERS} \
+            --clickhouse-url ${CLICKHOUSE_URL} \
+            --batch-size 10000 \
+            --flush-interval-ms 100 \
+            |& tee /tmp/acks_ingestor.lab.log'
+        - |
+          bash -lc 'taskset -c 7 \
+          nice -n -10 \
+          ./target/release/mempool_ingestor \
+            --ws-endpoint ${SOLANA_RPC} \
+            --kafka-topic mempool-events \
+            |& tee /tmp/mempool_ingestor.lab.log'
+        - |
+          bash -lc 'taskset -c 8 \
+          nice -n -10 \
+          ./target/release/block_ingestor \
+            --rpc ${SOLANA_RPC} \
+            --kafka-topic block-events \
+            |& tee /tmp/block_ingestor.lab.log'
+        - |
+          bash -lc 'taskset -c 9 \
+          nice -n -10 \
+          ./target/release/jito_bundle_ingestor \
+            --jito-url ${JITO_URL} \
+            --kafka-topic jito-bundles \
+            |& tee /tmp/jito_ingestor.lab.log'
+  
+  # WebSocket Echo Server for testing
+  - echo:
+      panes:
+        - bash -lc 'cd api && python -m wt_echo --verbose |& tee /tmp/wt_echo.lab.log'
+  
+  # ClickHouse Quick Queries
+  - ch-queries:
+      layout: main-vertical
+      panes:
+        - |
+          bash -lc 'echo "# Latest Bandit Events (last 20)"; \
+          clickhouse-client --query "
+          SELECT 
+            formatDateTime(ts, '%H:%M:%S') as time,
+            module,
+            route,
+            arm,
+            round(payoff, 4) as payoff,
+            landed 
+          FROM bandit_events 
+          ORDER BY ts DESC 
+          LIMIT 20 
+          FORMAT PrettyCompactMonoBlock"; \
+          exec bash'
+        - |
+          bash -lc 'echo "# MEV Opportunities (last 10)"; \
+          clickhouse-client --query "
+          SELECT 
+            formatDateTime(ts, '%H:%M:%S') as time,
+            slot,
+            route,
+            round(profit_est_sol, 4) as profit,
+            substring(hex(dna_fp), 1, 16) as dna
+          FROM mev_opportunities 
+          ORDER BY ts DESC 
+          LIMIT 10 
+          FORMAT PrettyCompactMonoBlock"; \
+          exec bash'
+        - |
+          bash -lc 'echo "# Arbitrage Paths (last 10)"; \
+          clickhouse-client --query "
+          SELECT 
+            formatDateTime(detected_at, '%H:%M:%S') as time,
+            concat(token_a, '/', token_b) as pair,
+            round(profit_usd, 2) as profit_usd,
+            execution_status,
+            round(gas_used, 0) as gas
+          FROM arbitrage_opportunities 
+          ORDER BY detected_at DESC 
+          LIMIT 10 
+          FORMAT PrettyCompactMonoBlock"; \
+          exec bash'
+  
+  # Log Tails with Advanced Filtering
+  - logs:
+      layout: even-vertical
+      panes:
+        - |
+          multitail -cT ANSI \
+            -l "tail -F /tmp/mev_agent.lab.log | grep --line-buffered -E 'PROFIT|BUNDLE|ERROR'" \
+            -l "tail -F /tmp/arb_agent.lab.log | grep --line-buffered -E 'OPPORTUNITY|EXECUTED'" \
+            -l "tail -F /tmp/api.lab.log | grep --line-buffered -E 'POST|PUT|ERROR'"
+        - tail -F /var/log/syslog | grep -E "OOM|panic|error"
+        - journalctl -f -u "mev-*" -u "arb-*" -n 50
+  
+  # Performance Monitoring
+  - perf:
+      layout: tiled
+      panes:
+        - |
+          watch -n1 'echo "=== Network Stats ==="; \
+          ss -i | grep -A1 "ESTAB" | grep -E "rtt|cwnd" | head -10; \
+          echo; echo "=== CPU Frequency ==="; \
+          grep MHz /proc/cpuinfo | sort -u; \
+          echo; echo "=== Memory Pressure ==="; \
+          cat /proc/pressure/memory 2>/dev/null || echo "Not available"; \
+          echo; echo "=== IO Pressure ==="; \
+          cat /proc/pressure/io 2>/dev/null || echo "Not available"'
+        - |
+          bash -lc 'while true; do \
+            echo "=== MEV Metrics (last minute) ==="; \
+            curl -s localhost:8080/metrics | grep -E "mev_|arb_|profit_"; \
+            sleep 10; \
+          done'
+        - pidstat -p ALL -u -r 1
+        - iotop -b -d 2
+
+# Launch commands (for reference):
+# tmuxinator start -p tmux/legendary-lab.yml
+# TMUX_CFG=tmux/legendary-lab.yml make tmux

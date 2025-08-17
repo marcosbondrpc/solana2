@@ -1,0 +1,167 @@
+[workspace]
+members = [
+    # Core MEV Services
+    "services/mev-engine",
+    "services/sandwich-detector",
+    "services/arbitrage-engine",
+    "services/arbitrage-detector",
+    "services/data-ingestion",
+    "services/node-metrics",
+    "services/data-scrapper",
+    "services/mission-control",
+    "services/mission-control-lite",
+    "jito-engine",
+    "jito-block-engine",
+    "shared-types",
+    "dex-parser",
+    "arbitrage-engine",
+    
+    # Shared Libraries
+    "shared/rust-common",
+    "shared/strategy"
+]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+authors = ["MEV Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# Core async runtime with custom executors
+tokio = { version = "1.40", features = ["full", "rt-multi-thread", "parking_lot", "io-util", "net", "sync", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["codec", "net"] }
+async-trait = "0.1"
+
+# High-performance networking
+quinn = { version = "0.11", features = ["rustls", "ring"] }
+rustls = { version = "0.23", features = ["dangerous_configuration"] }
+tonic = { version = "0.12", features = ["gzip", "tls"] }
+tower = { version = "0.4", features = ["full"] }
+hyper = { version = "1.4", features = ["full"] }
+
+# Solana SDK and Jito
+solana-sdk = "2.0"
+solana-client = "2.0"
+solana-transaction-status = "2.0"
+solana-account-decoder = "2.0"
+solana-rpc-client = "2.0"
+solana-rpc-client-api = "2.0"
+jito-protos = "0.3"
+jito-block-engine = "0.3"
+
+# Zero-copy and parsing
+bytes = { version = "1.7", features = ["serde"] }
+nom = "7.1"
+bytemuck = { version = "1.17", features = ["derive"] }
+zerocopy = { version = "0.7", features = ["derive"] }
+
+# Data structures and algorithms
+dashmap = { version = "6.0", features = ["raw-api"] }
+crossbeam = { version = "0.8", features = ["crossbeam-queue", "crossbeam-channel"] }
+parking_lot = { version = "0.12", features = ["deadlock_detection"] }
+arc-swap = "1.7"
+ahash = "0.8"
+indexmap = "2.3"
+
+# Metrics and monitoring
+prometheus = { version = "0.13", features = ["process"] }
+opentelemetry = { version = "0.24", features = ["metrics", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+bincode = "1.3"
+borsh = "1.5"
+
+# Error handling and utilities
+thiserror = "1.0"
+anyhow = "1.0"
+once_cell = "1.19"
+lazy_static = "1.5"
+
+# Mathematical operations
+num-bigint = "0.4"
+num-traits = "0.2"
+rust_decimal = "1.35"
+ethnum = "1.5"
+
+# System-level optimizations
+libc = "0.2"
+nix = { version = "0.29", features = ["sched", "mman", "signal"] }
+cpu-time = "1.0"
+perf-event = "0.4"
+
+# Database and caching
+clickhouse = { version = "0.13" }
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager", "ahash", "cluster-async"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid"] }
+
+# Message streaming
+rdkafka = { version = "0.36", features = ["tokio"] }
+futures = "0.3"
+futures-util = "0.3"
+async-stream = "0.3"
+
+# Cryptography for MEV
+sha2 = "0.10"
+sha3 = "0.10"
+blake3 = "1.5"
+ed25519-dalek = "2.1"
+
+# ML inference
+ort = { version = "2.0.0-rc.10", features = [] }
+
+# gRPC/Protobuf
+prost = "0.13"
+
+# Additional utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["v4", "serde"] }
+url = "2.5"
+regex = "1.11"
+clap = { version = "4.5", features = ["derive", "env"] }
+config = "0.14"
+dotenv = "0.15"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+overflow-checks = false
+
+[profile.release.package."*"]
+opt-level = 3
+codegen-units = 1
+
+# Ultra-performance profile for production
+[profile.ultra]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+overflow-checks = false
+
+# MEV production profile with native CPU optimizations
+[profile.mev-production]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+overflow-checks = false
+# Enable all CPU-specific optimizations
+
+[profile.bench]
+inherits = "release"
+debug = true

@@ -1,0 +1,366 @@
+version: '3.9'
+
+services:
+  # Core Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme} --maxmemory 2gb --maxmemory-policy allkeys-lru --bind 0.0.0.0 --protected-mode no
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # ClickHouse for high-performance MEV data storage
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.10
+    container_name: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./arbitrage-data-capture/clickhouse-setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./infra/clickhouse:/docker-entrypoint-initdb.d/mev
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - CLICKHOUSE_DB=solana_arbitrage
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Kafka for real-time MEV event streaming
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_MESSAGE_MAX_BYTES=10485760
+      - KAFKA_REPLICA_FETCH_MAX_BYTES=10485760
+      - KAFKA_GROUP_MAX_SESSION_TIMEOUT_MS=300000
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    ports:
+      - "3003:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SERVER_HTTP_ADDR=0.0.0.0
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./arbitrage-data-capture/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+      - clickhouse
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Backend Services
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - API_PORT=3000
+      - API_HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - JWT_SECRET=${JWT_SECRET}
+      - OIDC_ISSUER=${OIDC_ISSUER}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - MTLS_ENABLED=${MTLS_ENABLED:-false}
+      - CSRF_ENABLED=true
+      - AUDIT_SIGNATURE_KEY=${AUDIT_SIGNATURE_KEY}
+      - KAFKA_BROKERS=kafka:9092
+      - CLICKHOUSE_URL=http://clickhouse:8123
+    volumes:
+      - ./backend/certs:/app/certs:ro
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+      - kafka
+      - clickhouse
+    restart: unless-stopped
+
+  rpc-probe:
+    build:
+      context: ./backend/rpc-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - SOLANA_RPC_ENDPOINTS=${SOLANA_RPC_ENDPOINTS}
+      - KAFKA_BROKERS=kafka:9092
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  validator-agent:
+    build:
+      context: ./backend/validator-agent
+      dockerfile: Dockerfile
+    ports:
+      - "3020:3020"
+    environment:
+      - PORT=3020
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - VALIDATOR_CONFIG_PATH=/validator/config.yaml
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+    volumes:
+      - /var/run/dbus:/var/run/dbus:ro
+      - /run/systemd:/run/systemd:ro
+      - ${VALIDATOR_CONFIG_PATH}:/validator/config.yaml
+      - ${VALIDATOR_LEDGER_PATH}:/ledger
+    privileged: true
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  jito-probe:
+    build:
+      context: ./backend/jito-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3030:3030"
+    environment:
+      - PORT=3030
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - JITO_BLOCK_ENGINE_URL=${JITO_BLOCK_ENGINE_URL}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - KAFKA_BROKERS=kafka:9092
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  geyser-probe:
+    build:
+      context: ./backend/geyser-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3040:3040"
+    environment:
+      - PORT=3040
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - KAFKA_BROKERS=kafka:9092
+      - POSTGRES_URL=${POSTGRES_URL}
+      - CLICKHOUSE_URL=http://clickhouse:8123
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+      - kafka
+      - clickhouse
+    restart: unless-stopped
+
+  controls:
+    build:
+      context: ./backend/controls
+      dockerfile: Dockerfile
+    ports:
+      - "3060:3060"
+    environment:
+      - PORT=3060
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - LEDGER_PATH=${VALIDATOR_LEDGER_PATH}
+      - SNAPSHOTS_PATH=${SNAPSHOTS_PATH}
+      - CONFIG_PATH=${VALIDATOR_CONFIG_PATH}
+      - AUDIT_SIGNATURE_KEY=${AUDIT_SIGNATURE_KEY}
+      - KAFKA_BROKERS=kafka:9092
+    volumes:
+      - ${VALIDATOR_LEDGER_PATH}:/ledger
+      - ${SNAPSHOTS_PATH}:/snapshots
+      - ${VALIDATOR_CONFIG_PATH}:/config
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  # Ultra-high-performance MEV backend service
+  mev-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "9091:9091"
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+      - JITO_AUTH_KEYPAIR=/keys/jito-auth.json
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      - JITO_BLOCK_ENGINE_URL=${JITO_BLOCK_ENGINE_URL:-https://mainnet.block-engine.jito.wtf}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - KAFKA_BROKERS=kafka:9092
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+    volumes:
+      - ./backend/config.toml:/config/config.toml:ro
+      - ${JITO_AUTH_KEYPAIR:-./keys/jito-auth.json}:/keys/jito-auth.json:ro
+    networks:
+      - solana-backend
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+      memlock:
+        soft: -1
+        hard: -1
+    depends_on:
+      - redis
+      - kafka
+      - clickhouse
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G
+        reservations:
+          cpus: '4'
+          memory: 2G
+
+  # Arbitrage Detector Service
+  arbitrage-detector:
+    build:
+      context: ./backend/services/arbitrage-detector
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8090"
+      - "9092:9092"
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - KAFKA_BROKERS=kafka:9092
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - METRICS_PORT=9092
+    networks:
+      - solana-backend
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    depends_on:
+      - redis
+      - kafka
+      - clickhouse
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./backend/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - solana-backend
+    depends_on:
+      - api-gateway
+      - mev-backend
+      - arbitrage-detector
+    restart: unless-stopped
+
+networks:
+  solana-backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 9000
+
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  clickhouse-data:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-logs:

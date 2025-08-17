@@ -1,0 +1,99 @@
+version: '3.9'
+
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.2.1
+    container_name: solana-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp=4
+      - --memory=8G
+      - --overprovisioned
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr=internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr=internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr=internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --advertise-schema-registry-addr=internal://redpanda:8081,external://localhost:18081
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+    ports:
+      - "18081:18081"
+      - "18082:18082"
+      - "19092:19092"
+      - "19644:9644"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    networks:
+      - solana-history
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: solana-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
+    environment:
+      CLICKHOUSE_USER: solana
+      CLICKHOUSE_PASSWORD: mev_billions_2025
+      CLICKHOUSE_DB: solana_history
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_MAX_MEMORY_USAGE: 16000000000
+      CLICKHOUSE_MAX_BYTES_BEFORE_EXTERNAL_GROUP_BY: 8000000000
+      CLICKHOUSE_MAX_BYTES_BEFORE_EXTERNAL_SORT: 8000000000
+      CLICKHOUSE_MAX_BLOCK_SIZE: 100000
+      CLICKHOUSE_MAX_INSERT_BLOCK_SIZE: 1000000
+      CLICKHOUSE_MAX_THREADS: 16
+      CLICKHOUSE_BACKGROUND_POOL_SIZE: 32
+      CLICKHOUSE_BACKGROUND_MOVE_POOL_SIZE: 8
+      CLICKHOUSE_BACKGROUND_FETCHES_POOL_SIZE: 16
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./clickhouse/config.xml:/etc/clickhouse-server/config.d/config.xml:ro
+    networks:
+      - solana-history
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user=solana", "--password=mev_billions_2025", "-q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redpanda-console:
+    image: redpandadata/console:v2.7.0
+    container_name: solana-redpanda-console
+    ports:
+      - "8080:8080"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+    volumes:
+      - ./redpanda-console-config.yml:/tmp/config.yml:ro
+    networks:
+      - solana-history
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+networks:
+  solana-history:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  redpanda-data:
+    driver: local
+  clickhouse-data:
+    driver: local

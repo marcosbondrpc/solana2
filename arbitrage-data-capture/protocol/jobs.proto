@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package legendary.jobs;
+
+import "google/protobuf/timestamp.proto";
+
+// Training job request for ML models
+message TrainRequest {
+    string job_id = 1;
+    string model_type = 2; // "xgboost", "lightgbm", "catboost"
+    
+    message DataConfig {
+        string clickhouse_table = 1;
+        google.protobuf.Timestamp start_time = 2;
+        google.protobuf.Timestamp end_time = 3;
+        repeated string features = 4;
+        string target_column = 5;
+        uint32 sample_size = 6;
+        float train_test_split = 7;
+    }
+    
+    message ModelConfig {
+        map<string, string> hyperparameters = 1;
+        uint32 n_estimators = 2;
+        uint32 max_depth = 3;
+        float learning_rate = 4;
+        string objective = 5;
+        bool use_gpu = 6;
+        uint32 random_seed = 7;
+    }
+    
+    message OptimizationConfig {
+        bool enable_pgo = 1; // Profile-guided optimization
+        bool enable_treelite = 2;
+        string target_arch = 3; // "x86_64", "avx512"
+        uint32 batch_size = 4;
+        bool quantize = 5;
+    }
+    
+    DataConfig data_config = 3;
+    ModelConfig model_config = 4;
+    OptimizationConfig optimization_config = 5;
+    
+    string output_path = 6;
+    string callback_topic = 7; // Kafka topic for completion notification
+    map<string, string> metadata = 8;
+    google.protobuf.Timestamp created_at = 9;
+}
+
+// Training job status update
+message TrainStatus {
+    string job_id = 1;
+    
+    enum Status {
+        QUEUED = 0;
+        PREPARING_DATA = 1;
+        TRAINING = 2;
+        VALIDATING = 3;
+        OPTIMIZING = 4;
+        DEPLOYING = 5;
+        COMPLETED = 6;
+        FAILED = 7;
+    }
+    
+    Status status = 2;
+    float progress = 3; // 0.0 to 1.0
+    
+    message Metrics {
+        float train_auc = 1;
+        float val_auc = 2;
+        float train_precision = 3;
+        float val_precision = 4;
+        float train_recall = 5;
+        float val_recall = 6;
+        float inference_latency_us = 7; // microseconds
+        uint64 model_size_bytes = 8;
+    }
+    
+    Metrics metrics = 4;
+    string message = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+// Batch inference request
+message InferenceRequest {
+    string model_id = 1;
+    string request_id = 2;
+    
+    message Sample {
+        map<string, float> features = 1;
+        string sample_id = 2;
+    }
+    
+    repeated Sample samples = 3;
+    uint32 batch_size = 4;
+    uint32 timeout_us = 5; // microseconds
+    bool return_probabilities = 6;
+}
+
+// Batch inference response
+message InferenceResponse {
+    string request_id = 1;
+    
+    message Prediction {
+        string sample_id = 1;
+        float score = 2;
+        float probability = 3;
+        uint32 latency_us = 4;
+    }
+    
+    repeated Prediction predictions = 2;
+    uint32 total_latency_us = 3;
+    string model_version = 4;
+}

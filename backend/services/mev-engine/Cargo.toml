@@ -1,0 +1,79 @@
+[package]
+name = "mev-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+borsh = { workspace = true }
+
+# Solana
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+solana-transaction-status = { workspace = true }
+solana-account-decoder = { workspace = true }
+solana-rpc-client-api = { workspace = true }
+
+# Performance
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+ahash = { workspace = true }
+crossbeam = { workspace = true }
+bytes = { workspace = true }
+
+# Networking
+quinn = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true }
+
+# Database
+clickhouse = { workspace = true }
+redis = { workspace = true }
+
+# Kafka
+rdkafka = { workspace = true }
+futures = { workspace = true }
+
+# Metrics
+prometheus = { workspace = true }
+opentelemetry = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Math
+ethnum = { workspace = true }
+rust_decimal = { workspace = true }
+
+# Utilities
+chrono = { workspace = true }
+uuid = { workspace = true }
+clap = { workspace = true }
+toml = "0.8"
+nix = { workspace = true }
+libc = { workspace = true }
+
+# Shared libraries
+rust-common = { path = "../../shared/rust-common" }
+backend-shared-strategy = { path = "../../shared/strategy" }
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.5"
+tokio-test = "0.4"
+
+[[bin]]
+name = "mev-engine"
+path = "src/main.rs"
+
+[[bench]]
+name = "mev_benchmarks"
+harness = false

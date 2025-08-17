@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  mission-control:
+    build: .
+    container_name: solana-mission-control
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info,mission_control=debug
+      - REDIS_URL=redis://redis:6379
+      - RPC_ENDPOINTS=https://api.mainnet-beta.solana.com
+      - TPU_ENDPOINT=127.0.0.1:8003
+      - VALIDATOR_STAKE=1000000000000
+    depends_on:
+      - redis
+      - clickhouse
+      - kafka
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: mission-control-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23
+    container_name: mission-control-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    environment:
+      - CLICKHOUSE_DB=mission_control
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: mission-control-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    depends_on:
+      - zookeeper
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: mission-control-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mission-control-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mission-control-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - mission-control-net
+    restart: unless-stopped
+
+networks:
+  mission-control-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  clickhouse-data:
+  prometheus-data:
+  grafana-data:

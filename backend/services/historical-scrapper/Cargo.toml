@@ -1,0 +1,65 @@
+[package]
+name = "historical-scrapper"
+version = "1.0.0"
+edition = "2021"
+authors = ["MEV Team"]
+
+[dependencies]
+# Core dependencies from workspace
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+bytes = { workspace = true }
+parking_lot = { workspace = true }
+arc-swap = { workspace = true }
+dashmap = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Solana specific
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+solana-transaction-status = { workspace = true }
+solana-account-decoder = { workspace = true }
+solana-rpc-client = { workspace = true }
+solana-rpc-client-api = { workspace = true }
+
+# Zero-copy and SIMD
+bytemuck = { workspace = true }
+zerocopy = { workspace = true }
+nom = { workspace = true }
+base64 = "0.22"
+bincode = { workspace = true }
+borsh = { workspace = true }
+
+# Database
+clickhouse = { workspace = true }
+chrono = { workspace = true }
+
+# High-performance
+crossbeam = { workspace = true }
+rayon = "1.10"
+num_cpus = "1.16"
+core_affinity = "0.8"
+
+# Metrics
+prometheus = { workspace = true }
+
+# Configuration
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+config = { workspace = true }
+
+# Compression
+zstd = "0.13"
+lz4 = "1.24"
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.5"
+
+[[bench]]
+name = "scrapper_bench"
+harness = false

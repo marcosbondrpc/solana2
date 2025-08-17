@@ -1,0 +1,396 @@
+/* Solana MEV Dashboard - Premium DeFi Design System */
+
+/* ===============================================
+   1. CSS VARIABLES & DESIGN TOKENS
+   =============================================== */
+:root {
+  /* Spacing Scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  
+  /* Core Color Palette */
+  --color-background: #0A0B0D;
+  --color-surface: rgba(20, 22, 28, 0.8);
+  --color-surface-solid: #14161C;
+  --color-surface-light: rgba(30, 33, 40, 0.6);
+  --color-surface-hover: rgba(40, 44, 52, 0.7);
+  
+  /* Primary Colors */
+  --color-primary: #00D4FF;
+  --color-primary-dark: #00A8CC;
+  --color-primary-light: #33DDFF;
+  --color-primary-alpha: rgba(0, 212, 255, 0.1);
+  
+  /* Accent Colors */
+  --color-success: #00FF88;
+  --color-success-dark: #00CC6B;
+  --color-success-alpha: rgba(0, 255, 136, 0.1);
+  
+  --color-warning: #FFB800;
+  --color-warning-dark: #CC9300;
+  --color-warning-alpha: rgba(255, 184, 0, 0.1);
+  
+  --color-danger: #FF3366;
+  --color-danger-dark: #CC2952;
+  --color-danger-alpha: rgba(255, 51, 102, 0.1);
+  
+  --color-purple: #9945FF;
+  --color-purple-dark: #7A37CC;
+  --color-purple-alpha: rgba(153, 69, 255, 0.1);
+  
+  /* Text Colors */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-text-disabled: #4B5563;
+  
+  /* Border Colors */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.04);
+  --color-border-focus: rgba(0, 212, 255, 0.5);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #00D4FF 0%, #9945FF 100%);
+  --gradient-success: linear-gradient(135deg, #00FF88 0%, #00D4FF 100%);
+  --gradient-danger: linear-gradient(135deg, #FF3366 0%, #FFB800 100%);
+  --gradient-dark: linear-gradient(180deg, rgba(20, 22, 28, 0) 0%, rgba(10, 11, 13, 0.8) 100%);
+  --gradient-glow: radial-gradient(circle at center, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+  
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+  --font-size-6xl: 60px;
+  
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.3);
+  --shadow-glow-sm: 0 0 20px rgba(0, 212, 255, 0.2);
+  
+  /* Animation */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Z-index Scale */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-popover: 500;
+  --z-tooltip: 600;
+  --z-notification: 700;
+}
+
+/* ===============================================
+   2. SIMPLE BACKGROUNDS (NO GLASSMORPHISM)
+   =============================================== */
+.glass {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border-light);
+}
+
+.glass-dark {
+  background: rgba(10, 11, 13, 0.9);
+  border: 1px solid var(--color-border);
+}
+
+/* ===============================================
+   3. GLOW EFFECTS
+   =============================================== */
+.glow-primary {
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3),
+              inset 0 0 20px rgba(0, 212, 255, 0.05);
+}
+
+.glow-success {
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.3),
+              inset 0 0 20px rgba(0, 255, 136, 0.05);
+}
+
+.glow-danger {
+  box-shadow: 0 0 30px rgba(255, 51, 102, 0.3),
+              inset 0 0 20px rgba(255, 51, 102, 0.05);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px currentColor,
+               0 0 40px currentColor;
+}
+
+/* ===============================================
+   4. GRADIENT BACKGROUNDS
+   =============================================== */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(var(--color-surface-solid), var(--color-surface-solid)) padding-box,
+              var(--gradient-primary) border-box;
+  border: 1px solid transparent;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--gradient-primary);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  opacity: 0.5;
+  transition: opacity var(--transition-base);
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* ===============================================
+   5. ANIMATIONS
+   =============================================== */
+@keyframes pulse-glow {
+  0%, 100% { 
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% { 
+    opacity: 0.8;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rotate {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes number-counter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Animation Classes */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+.animate-spin {
+  animation: rotate 1s linear infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ===============================================
+   6. UTILITY CLASSES
+   =============================================== */
+
+/* Hover Effects (CPU-optimized) */
+.hover-lift {
+  transition: opacity var(--transition-base), box-shadow var(--transition-base);
+}
+
+.hover-lift:hover {
+  opacity: 0.95;
+  box-shadow: var(--shadow-md);
+}
+
+.hover-scale {
+  transition: opacity var(--transition-base);
+}
+
+.hover-scale:hover {
+  opacity: 0.9;
+}
+
+.hover-glow:hover {
+  box-shadow: var(--shadow-glow-sm);
+}
+
+/* Loading States */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-light) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Simple Backgrounds (No Blur) */
+.blur-backdrop {
+  background: rgba(10, 11, 13, 0.95);
+}
+
+.blur-backdrop-heavy {
+  background: rgba(10, 11, 13, 0.98);
+}
+
+/* Text Gradients */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-success {
+  background: var(--gradient-success);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===============================================
+   7. RESPONSIVE BREAKPOINTS
+   =============================================== */
+@media (max-width: 640px) {
+  :root {
+    --font-size-5xl: 36px;
+    --font-size-4xl: 30px;
+    --font-size-3xl: 24px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  :root {
+    --font-size-5xl: 42px;
+  }
+}
+
+/* ===============================================
+   8. CPU-ONLY OPTIMIZATIONS
+   =============================================== */
+.gpu-accelerated {
+  /* GPU acceleration disabled for CPU-only server */
+  -webkit-font-smoothing: antialiased;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Optimize font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

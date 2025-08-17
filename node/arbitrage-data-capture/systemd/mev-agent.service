@@ -1,0 +1,82 @@
+[Unit]
+Description=MEV Agent - High Performance MEV Extraction Service
+Documentation=https://github.com/yourusername/mev-infrastructure
+After=network-online.target mev-control-plane.service
+Wants=network-online.target
+Requires=mev-control-plane.service
+
+[Service]
+Type=simple
+User=mev
+Group=mev
+WorkingDirectory=/home/kidgordones/0solana/node/arbitrage-data-capture
+
+# Environment configuration
+EnvironmentFile=-/etc/default/mev-agent
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+Environment="KAFKA_BROKERS=localhost:9092"
+Environment="CLICKHOUSE_URL=http://localhost:8123"
+Environment="REDIS_URL=redis://localhost:6379"
+Environment="SOLANA_RPC=https://api.mainnet-beta.solana.com"
+Environment="JITO_URL=https://mainnet.block-engine.jito.wtf"
+Environment="MIN_PROFIT_USD=10"
+Environment="MAX_GAS_PRICE_GWEI=100"
+
+# CPU affinity and scheduling (cores 2-3, RT priority 30 - highest)
+CPUAffinity=2 3
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=30
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+Nice=-20
+
+# Memory and resource limits
+MemoryMax=8G
+MemoryHigh=6G
+TasksMax=8192
+LimitNOFILE=2097152
+LimitNPROC=65536
+LimitMEMLOCK=infinity
+
+# Security hardening
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=no
+ReadWritePaths=/tmp /var/log/mev /var/lib/mev
+
+# Process management
+Restart=always
+RestartSec=3
+TimeoutStartSec=30
+TimeoutStopSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Performance monitoring
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# Main executable with CPU pinning
+ExecStart=/usr/bin/taskset -c 2-3 \
+    /usr/bin/chrt -f 30 \
+    /home/kidgordones/0solana/node/arbitrage-data-capture/target/release/mev_agent \
+    --network mainnet \
+    --strategy aggressive \
+    --min-profit ${MIN_PROFIT_USD} \
+    --verbose
+
+# Graceful shutdown
+ExecStop=/bin/kill -INT $MAINPID
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal+console
+StandardError=journal+console
+SyslogIdentifier=mev-agent
+
+[Install]
+WantedBy=multi-user.target

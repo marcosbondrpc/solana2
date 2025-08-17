@@ -1,0 +1,19 @@
+[package]
+name = "optimizer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared-types = { path = "../shared-types" }
+tokio = { workspace = true }
+libc = { workspace = true }
+nix = { workspace = true }
+parking_lot = { workspace = true }
+tracing = { workspace = true }
+prometheus = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+once_cell = { workspace = true }
+sysinfo = "0.31"
+procfs = "0.16"

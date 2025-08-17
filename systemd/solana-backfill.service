@@ -1,0 +1,42 @@
+[Unit]
+Description=Solana RPC Backfill Worker
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+RestartSec=10
+User=solana
+Group=solana
+WorkingDirectory=/home/kidgordones/0solana/solana2/backend/services/historical-data/backfill-worker
+
+Environment="NODE_ENV=production"
+Environment="RPC=https://api.mainnet-beta.solana.com"
+Environment="KAFKA_BROKERS=127.0.0.1:9092"
+Environment="REDIS_URL=redis://127.0.0.1:6379"
+Environment="CONC=16"
+Environment="BATCH_SIZE=100"
+
+ExecStartPre=/usr/bin/npm ci --production
+ExecStart=/usr/bin/node --max-old-space-size=4096 dist/index.js
+
+# Resource limits
+LimitNOFILE=262144
+LimitNPROC=32768
+
+# CPU affinity
+CPUAffinity=8-15
+CPUWeight=100
+
+# Memory limits
+MemoryHigh=3G
+MemoryMax=4G
+
+# Kill settings
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

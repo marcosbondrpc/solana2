@@ -1,0 +1,6 @@
+[Unit]
+Description=Solana ledger snapshot/remote cleanup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/solana-ledger-cleanup.sh

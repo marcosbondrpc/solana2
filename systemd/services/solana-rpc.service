@@ -1,0 +1,49 @@
+[Unit]
+Description=Agave Solana RPC Node
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+DevicePolicy=auto
+Type=simple
+EnvironmentFile=/etc/default/solana-rpc
+User=solana
+Group=solana
+WorkingDirectory=/opt/solana
+ExecStart=/opt/solana/run-rpc.sh
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+LimitNOFILE=1048576
+LimitNPROC=65535
+TasksMax=infinity
+NoNewPrivileges=no
+PrivateTmp=yes
+PrivateDevices=no
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+ReadWritePaths=/mnt/ledger /mnt/accounts /opt/solana
+ReadOnlyPaths=/usr /boot /opt /etc
+RuntimeDirectory=solana-rpc
+CacheDirectory=solana-rpc
+StateDirectory=solana-rpc
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+UMask=0077
+CPUSchedulingPolicy=other
+IOSchedulingClass=best-effort
+IOSchedulingPriority=0
+
+[Install]
+WantedBy=multi-user.target

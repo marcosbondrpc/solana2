@@ -1,0 +1,220 @@
+version: '3.8'
+
+services:
+  # ClickHouse for historical data
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: mev-clickhouse
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./backend/services/historical-scrapper/schemas:/docker-entrypoint-initdb.d
+      - clickhouse-data:/var/lib/clickhouse
+    environment:
+      - CLICKHOUSE_DB=mev
+      - CLICKHOUSE_USER=mev
+      - CLICKHOUSE_PASSWORD=mev_sota_2024
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - mev-network
+
+  # Redpanda (Kafka alternative) for streaming
+  redpanda:
+    image: docker.vectorized.io/vectorized/redpanda:v23.3.14
+    container_name: mev-redpanda
+    restart: always
+    command:
+      - redpanda start
+      - --mode dev-container
+      - --smp 4
+      - --memory 4G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --set redpanda.auto_create_topics_enabled=true
+      - --set redpanda.enable_idempotence=true
+      - --set redpanda.enable_transactions=true
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+      - "8081:8081"
+      - "8082:8082"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    networks:
+      - mev-network
+
+  # Redis for caching and state
+  redis:
+    image: redis:7-alpine
+    container_name: mev-redis
+    restart: always
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru --save ""
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - mev-network
+
+  # FastAPI Control Plane
+  control-plane:
+    build:
+      context: ./backend/services/control-plane
+      dockerfile: Dockerfile
+    container_name: mev-control-plane
+    restart: always
+    ports:
+      - "8000:8000"
+      - "8001:8001"  # WebSocket
+    environment:
+      - DATABASE_URL=clickhouse://mev:mev_sota_2024@clickhouse:8123/mev
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=redpanda:9092
+      - SOLANA_RPC=https://api.mainnet-beta.solana.com
+      - JITO_BLOCK_ENGINE=https://mainnet.block-engine.jito.wtf
+    depends_on:
+      - clickhouse
+      - redpanda
+      - redis
+    volumes:
+      - ./backend/services/control-plane:/app
+      - ./models:/models
+    networks:
+      - mev-network
+
+  # Historical Scrapper
+  historical-scrapper:
+    build:
+      context: ./backend/services/historical-scrapper
+      dockerfile: Dockerfile
+    container_name: mev-historical-scrapper
+    restart: always
+    environment:
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - SOLANA_RPC=https://api.mainnet-beta.solana.com
+      - RUST_LOG=info
+    depends_on:
+      - clickhouse
+    volumes:
+      - ./datasets:/datasets
+    networks:
+      - mev-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+  # Arbitrage Engine
+  arbitrage-engine:
+    build:
+      context: ./backend/services/arbitrage-engine
+      dockerfile: Dockerfile
+    container_name: mev-arbitrage-engine
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=redpanda:9092
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - SOLANA_RPC=https://api.mainnet-beta.solana.com
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+    depends_on:
+      - redis
+      - redpanda
+      - clickhouse
+    volumes:
+      - ./models:/models:ro
+    networks:
+      - mev-network
+    cap_add:
+      - NET_ADMIN  # For DSCP marking
+      - SYS_NICE   # For process priority
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 16G
+
+  # Execution Engine
+  execution-engine:
+    build:
+      context: ./backend/services/execution-engine
+      dockerfile: Dockerfile
+    container_name: mev-execution-engine
+    restart: always
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=redpanda:9092
+      - JITO_BLOCK_ENGINE=https://mainnet.block-engine.jito.wtf
+      - SOLANA_RPC=https://api.mainnet-beta.solana.com
+      - RUST_LOG=info
+    depends_on:
+      - redis
+      - redpanda
+    networks:
+      - mev-network
+    cap_add:
+      - NET_ADMIN  # For DSCP marking
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mev-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - mev-network
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mev-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=mev_sota_2024
+      - GF_INSTALL_PLUGINS=clickhouse-datasource
+    volumes:
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - clickhouse
+    networks:
+      - mev-network
+
+networks:
+  mev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  clickhouse-data:
+  redpanda-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:

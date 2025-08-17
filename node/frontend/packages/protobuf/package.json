@@ -1,0 +1,29 @@
+{
+  "name": "@solana-mev/protobuf",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "proto:compile": "pbjs -t static-module -w es6 -o src/proto/messages.js src/proto/*.proto && pbts -o src/proto/messages.d.ts src/proto/messages.js",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "bench": "vitest bench",
+    "clean": "rm -rf dist .turbo node_modules"
+  },
+  "dependencies": {
+    "@solana-mev/utils": "workspace:*",
+    "protobufjs": "^7.2.5",
+    "long": "^5.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "protobufjs-cli": "^1.1.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.3"
+  }
+}

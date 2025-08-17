@@ -1,0 +1,90 @@
+{
+  "services": {
+    "apiGateway": {
+      "host": "localhost",
+      "port": 3000,
+      "protocol": "https",
+      "endpoints": {
+        "health": "/health",
+        "metrics": "/api/metrics",
+        "node": "/api/node",
+        "rpc": "/api/rpc",
+        "jito": "/api/jito",
+        "control": "/api/control",
+        "ws": "/ws"
+      }
+    },
+    "rpcProbe": {
+      "host": "localhost",
+      "port": 3001,
+      "internal": true
+    },
+    "validatorAgent": {
+      "host": "localhost",
+      "port": 3002,
+      "internal": true
+    },
+    "jitoProbe": {
+      "host": "localhost",
+      "port": 3003,
+      "internal": true
+    },
+    "controls": {
+      "host": "localhost",
+      "port": 3004,
+      "internal": true
+    },
+    "frontend": {
+      "host": "localhost",
+      "port": 42391,
+      "backendUrl": "https://localhost:3000"
+    }
+  },
+  "authentication": {
+    "mTLS": {
+      "enabled": true,
+      "caPath": "/home/kidgordones/0solana/node/certs/ca.crt",
+      "certPath": "/home/kidgordones/0solana/node/certs/client.crt",
+      "keyPath": "/home/kidgordones/0solana/node/certs/client.key"
+    },
+    "oidc": {
+      "enabled": false,
+      "provider": "auth0",
+      "domain": "",
+      "clientId": "",
+      "clientSecret": ""
+    }
+  },
+  "monitoring": {
+    "prometheus": {
+      "enabled": true,
+      "port": 9090,
+      "scrapeInterval": "5s"
+    },
+    "loki": {
+      "enabled": true,
+      "port": 3100
+    },
+    "alertmanager": {
+      "enabled": true,
+      "port": 9093
+    }
+  },
+  "solana": {
+    "rpcUrl": "http://localhost:8899",
+    "wsUrl": "ws://localhost:8900",
+    "network": "mainnet-beta",
+    "validatorIdentity": "",
+    "voteAccount": ""
+  },
+  "jito": {
+    "blockEngineUrl": "https://mainnet.block-engine.jito.wtf",
+    "relayUrls": [
+      "https://amsterdam.mainnet.block-engine.jito.wtf",
+      "https://frankfurt.mainnet.block-engine.jito.wtf",
+      "https://ny.mainnet.block-engine.jito.wtf",
+      "https://tokyo.mainnet.block-engine.jito.wtf"
+    ],
+    "authToken": ""
+  }
+}

@@ -1,0 +1,82 @@
+# Grafana Dashboard Auto-Provisioning
+# Legendary MEV Infrastructure Dashboards
+apiVersion: 1
+
+providers:
+  # Main MEV Control Center dashboards
+  - name: "MEV Control Center"
+    orgId: 1
+    folder: "MEV Control Center"
+    folderUid: "mev-control"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/mev
+      foldersFromFilesStructure: true
+      
+  # Bandit optimization dashboards
+  - name: "Bandit Analytics"
+    orgId: 1
+    folder: "Bandit Analytics"
+    folderUid: "bandit"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/bandit
+      foldersFromFilesStructure: false
+      
+  # System performance dashboards
+  - name: "System Performance"
+    orgId: 1
+    folder: "System Performance"
+    folderUid: "perf"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 60
+    options:
+      path: /var/lib/grafana/dashboards/performance
+      foldersFromFilesStructure: false
+      
+  # Arbitrage strategy dashboards
+  - name: "Arbitrage Strategies"
+    orgId: 1
+    folder: "Arbitrage Strategies"
+    folderUid: "arb"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/arbitrage
+      foldersFromFilesStructure: false
+      
+  # Network monitoring dashboards
+  - name: "Network Monitor"
+    orgId: 1
+    folder: "Network Monitor"
+    folderUid: "network"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards/network
+      foldersFromFilesStructure: false
+      
+  # Risk management dashboards
+  - name: "Risk Management"
+    orgId: 1
+    folder: "Risk Management"
+    folderUid: "risk"
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/risk
+      foldersFromFilesStructure: false

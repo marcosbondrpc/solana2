@@ -1,0 +1,69 @@
+[Unit]
+Description=MEV Sandwich Detector - Ultra-Low Latency Engine
+Documentation=https://github.com/mev-sandwich-detector
+After=network-online.target clickhouse-server.service redis.service kafka.service
+Wants=network-online.target
+Requires=clickhouse-server.service redis.service
+
+[Service]
+Type=simple
+User=mev
+Group=mev
+WorkingDirectory=/home/kidgordones/0solana/node/mev-sandwich-detector
+
+# Environment
+Environment="RUST_LOG=mev_sandwich=debug,quinn=warn"
+Environment="RUST_BACKTRACE=1"
+Environment="TOKIO_WORKER_THREADS=16"
+
+# Performance tuning
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=99
+CPUAffinity=0-15
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+MemoryMax=32G
+MemoryHigh=24G
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/kidgordones/0solana/node/mev-sandwich-detector/data
+ReadWritePaths=/home/kidgordones/0solana/node/mev-sandwich-detector/logs
+
+# Network capabilities for raw sockets
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN CAP_SYS_NICE
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN CAP_SYS_NICE
+
+# Resource limits
+LimitNOFILE=1000000
+LimitNPROC=32768
+LimitMEMLOCK=infinity
+LimitRTTIME=infinity
+
+# Startup
+ExecStartPre=/usr/bin/bash -c 'echo 2048 > /proc/sys/net/core/netdev_max_backlog'
+ExecStartPre=/usr/bin/bash -c 'echo 134217728 > /proc/sys/net/core/rmem_max'
+ExecStartPre=/usr/bin/bash -c 'echo 134217728 > /proc/sys/net/core/wmem_max'
+ExecStartPre=/usr/bin/bash -c 'echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor'
+
+ExecStart=/home/kidgordones/0solana/node/mev-sandwich-detector/target/release/mev-sandwich-detector
+
+# Restart policy
+Restart=always
+RestartSec=3
+StartLimitInterval=0
+
+# Monitoring
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mev-sandwich
+
+# Watchdog
+WatchdogSec=30
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,537 @@
+[
+  {
+    "version": "sota-1.0",
+    "slot": 360200000,
+    "block_time": 1755280005,
+    "tx_signature": "3JupRxM2k7y1r5oJp8xLk2aUqf7Dq7Tq2sJvB7E7jHhFJm4ZVYpJ1m3J1pZ4r1ke3A1Y2p7D8dJfQJ7h9XwQJtq",
+    "signer": "GtagyESa99t49VmUqnnfsuowYnigSNKuYXdXWyXWNdd",
+    "program": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "path": ["Raydium CPMM", "Meteora DLMM"],
+    "legs": [
+      {
+        "inner_program": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",
+        "amm": "Raydium CPMM",
+        "pool_id": "raydium_cpmmpool_pepe_sol",
+        "sell_mint": "So11111111111111111111111111111111111111112",
+        "buy_mint": "EkJuyYyD3to61CHVPJn6wHb7xANxvqApnVJ4o2SdBAGS",
+        "sell_amount": 2.5,
+        "buy_amount": 201000.0,
+        "slippage": {
+          "effective_price": 80400.0,
+          "price_before": 80320.0,
+          "price_after": 80410.0,
+          "fee_bps": 25.0,
+          "price_impact_bps": 11.2,
+          "liquidity_before": 12000000.0,
+          "liquidity_after": 11875000.0
+        }
+      },
+      {
+        "inner_program": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+        "amm": "Meteora DLMM",
+        "pool_id": "meteora_dlmm_pepe_sol",
+        "sell_mint": "EkJuyYyD3to61CHVPJn6wHb7xANxvqApnVJ4o2SdBAGS",
+        "buy_mint": "So11111111111111111111111111111111111111112",
+        "sell_amount": 201000.0,
+        "buy_amount": 2.535,
+        "slippage": {
+          "effective_price": 79369.0,
+          "price_before": 79250.0,
+          "price_after": 79380.0,
+          "fee_bps": 30.0,
+          "price_impact_bps": 16.4,
+          "liquidity_before": 8800000.0,
+          "liquidity_after": 8855000.0
+        }
+      }
+    ],
+    "revenue_sol": 0.035,
+    "costs": {
+      "tx_fee_sol": 0.00001,
+      "priority_fee_sol": 0.00012,
+      "jito_tip_sol": 0.0,
+      "total_cost_sol": 0.00013
+    },
+    "profit": {
+      "gross_sol": 0.035,
+      "net_sol": 0.03487,
+      "roi": 268.23
+    },
+    "priority": {
+      "cu_used": 340000,
+      "cu_price_micro_lamports": 350,
+      "priority_lamports": 119.0
+    },
+    "latency": {
+      "submit_to_land_ms": 380
+    },
+    "classification": {
+      "type": "dex<->dex_two_leg",
+      "dex_count": 2,
+      "amm_count": 2
+    },
+    "market": {
+      "snapshot_id": "sol-pepe-360200000",
+      "mid_across_dex": {
+        "Raydium": 0.00001245,
+        "Meteora": 0.0000126
+      },
+      "depth_top": {
+        "Raydium": 11500000,
+        "Meteora": 9000000
+      },
+      "spread_bps": 7.1,
+      "volatility_5s_bps": 18.3
+    },
+    "risk": {
+      "sandwich_risk_bps": 1.1,
+      "backrun_seen": false,
+      "honeypot_flag": false,
+      "token_age_sec": 864000,
+      "ownership_concentration_pct": 7.4,
+      "freeze_auth_present": false,
+      "mint_auth_present": false
+    },
+    "signer_reputation": {
+      "success_rate_7d": 0.82,
+      "pnl_7d_sol": 412.7,
+      "avg_roi_7d": 0.0091
+    },
+    "confidence": 0.96,
+    "label_is_arb": 1,
+    "target_net_profit_sol": 0.03487,
+    "target_roi": 268.23
+  },
+  {
+    "version": "sota-1.0",
+    "slot": 360200150,
+    "block_time": 1755280065,
+    "tx_signature": "4KvqSyN3l8z2s6pKq9yMl3bVrg8Eq8Ur3tKwC8F8kIiGKn5aWZqK2n4K2qa5s2lf4B2Z3q8E9eKfRK8i0YxRKur",
+    "signer": "HtbhyGTa89u50WnVqppgtupsZojoTOLzYaEeGZYXWed",
+    "program": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "path": ["Orca Whirlpool", "Phoenix", "Raydium V4"],
+    "legs": [
+      {
+        "inner_program": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
+        "amm": "Orca Whirlpool",
+        "pool_id": "orca_whirlpool_usdc_sol",
+        "sell_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "buy_mint": "So11111111111111111111111111111111111111112",
+        "sell_amount": 500.0,
+        "buy_amount": 3.125,
+        "slippage": {
+          "effective_price": 160.0,
+          "price_before": 159.95,
+          "price_after": 160.02,
+          "fee_bps": 5.0,
+          "price_impact_bps": 4.4,
+          "liquidity_before": 25000000.0,
+          "liquidity_after": 24500000.0
+        }
+      },
+      {
+        "inner_program": "PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY",
+        "amm": "Phoenix",
+        "pool_id": "phoenix_clob_sol_bonk",
+        "sell_mint": "So11111111111111111111111111111111111111112",
+        "buy_mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "sell_amount": 3.125,
+        "buy_amount": 8750000.0,
+        "slippage": {
+          "effective_price": 2800000.0,
+          "price_before": 2798000.0,
+          "price_after": 2801000.0,
+          "fee_bps": 10.0,
+          "price_impact_bps": 7.1,
+          "liquidity_before": 45000000.0,
+          "liquidity_after": 44687500.0
+        }
+      },
+      {
+        "inner_program": "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+        "amm": "Raydium V4",
+        "pool_id": "raydium_v4_bonk_usdc",
+        "sell_mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+        "buy_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "sell_amount": 8750000.0,
+        "buy_amount": 507.5,
+        "slippage": {
+          "effective_price": 0.000058,
+          "price_before": 0.0000579,
+          "price_after": 0.0000581,
+          "fee_bps": 25.0,
+          "price_impact_bps": 3.5,
+          "liquidity_before": 18000000.0,
+          "liquidity_after": 18507500.0
+        }
+      }
+    ],
+    "revenue_sol": 0.047,
+    "costs": {
+      "tx_fee_sol": 0.000015,
+      "priority_fee_sol": 0.00025,
+      "jito_tip_sol": 0.001,
+      "total_cost_sol": 0.001265
+    },
+    "profit": {
+      "gross_sol": 0.047,
+      "net_sol": 0.045735,
+      "roi": 36.16
+    },
+    "priority": {
+      "cu_used": 450000,
+      "cu_price_micro_lamports": 555,
+      "priority_lamports": 249.75
+    },
+    "latency": {
+      "submit_to_land_ms": 245
+    },
+    "classification": {
+      "type": "dex<->dex_three_leg",
+      "dex_count": 3,
+      "amm_count": 3
+    },
+    "market": {
+      "snapshot_id": "usdc-sol-bonk-360200150",
+      "mid_across_dex": {
+        "Orca": 159.98,
+        "Phoenix": 2799000.0,
+        "Raydium": 0.000058
+      },
+      "depth_top": {
+        "Orca": 25000000,
+        "Phoenix": 45000000,
+        "Raydium": 18000000
+      },
+      "spread_bps": 5.2,
+      "volatility_5s_bps": 12.7
+    },
+    "risk": {
+      "sandwich_risk_bps": 2.3,
+      "backrun_seen": true,
+      "honeypot_flag": false,
+      "token_age_sec": 31536000,
+      "ownership_concentration_pct": 3.2,
+      "freeze_auth_present": false,
+      "mint_auth_present": false
+    },
+    "signer_reputation": {
+      "success_rate_7d": 0.91,
+      "pnl_7d_sol": 892.3,
+      "avg_roi_7d": 0.0142
+    },
+    "confidence": 0.99,
+    "label_is_arb": 1,
+    "target_net_profit_sol": 0.045735,
+    "target_roi": 36.16
+  },
+  {
+    "version": "sota-1.0",
+    "slot": 360200300,
+    "block_time": 1755280125,
+    "tx_signature": "5LwrTzO4m9a3t7qLr0aMm4cWsh9Fr9Vs4uLxD9G9lJjHLo6bXarL3o5L3rb6t3mg5C3A4r9F0fLgSL9j1ZySLvs",
+    "signer": "IuchyGVb00v61XoWrvrmtwoqaZpjtPMYaFfFZaWWFfe",
+    "program": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "path": ["OpenBook V2", "Lifinity"],
+    "legs": [
+      {
+        "inner_program": "opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb",
+        "amm": "OpenBook V2",
+        "pool_id": "openbook_v2_ray_usdc",
+        "sell_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "buy_mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+        "sell_amount": 1000.0,
+        "buy_amount": 185.5,
+        "slippage": {
+          "effective_price": 5.391,
+          "price_before": 5.389,
+          "price_after": 5.392,
+          "fee_bps": 3.0,
+          "price_impact_bps": 5.6,
+          "liquidity_before": 8500000.0,
+          "liquidity_after": 8315000.0
+        }
+      },
+      {
+        "inner_program": "2wT8Yq49kHgDzXuPxZSaeLaH1qbmGXtEyPy64bL7aD3c",
+        "amm": "Lifinity",
+        "pool_id": "lifinity_ray_usdc",
+        "sell_mint": "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R",
+        "buy_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "sell_amount": 185.5,
+        "buy_amount": 1012.8,
+        "slippage": {
+          "effective_price": 5.461,
+          "price_before": 5.458,
+          "price_after": 5.463,
+          "fee_bps": 20.0,
+          "price_impact_bps": 9.2,
+          "liquidity_before": 6200000.0,
+          "liquidity_after": 6387200.0
+        }
+      }
+    ],
+    "revenue_sol": 0.079,
+    "costs": {
+      "tx_fee_sol": 0.00001,
+      "priority_fee_sol": 0.0008,
+      "jito_tip_sol": 0.002,
+      "total_cost_sol": 0.00281
+    },
+    "profit": {
+      "gross_sol": 0.079,
+      "net_sol": 0.07619,
+      "roi": 27.11
+    },
+    "priority": {
+      "cu_used": 280000,
+      "cu_price_micro_lamports": 2857,
+      "priority_lamports": 799.96
+    },
+    "latency": {
+      "submit_to_land_ms": 195
+    },
+    "classification": {
+      "type": "dex<->dex_two_leg",
+      "dex_count": 2,
+      "amm_count": 2
+    },
+    "market": {
+      "snapshot_id": "ray-usdc-360200300",
+      "mid_across_dex": {
+        "OpenBook": 5.39,
+        "Lifinity": 5.46
+      },
+      "depth_top": {
+        "OpenBook": 8500000,
+        "Lifinity": 6200000
+      },
+      "spread_bps": 12.9,
+      "volatility_5s_bps": 25.1
+    },
+    "risk": {
+      "sandwich_risk_bps": 5.7,
+      "backrun_seen": false,
+      "honeypot_flag": false,
+      "token_age_sec": 94608000,
+      "ownership_concentration_pct": 1.8,
+      "freeze_auth_present": false,
+      "mint_auth_present": false
+    },
+    "signer_reputation": {
+      "success_rate_7d": 0.76,
+      "pnl_7d_sol": 234.5,
+      "avg_roi_7d": 0.0089
+    },
+    "confidence": 0.93,
+    "label_is_arb": 1,
+    "target_net_profit_sol": 0.07619,
+    "target_roi": 27.11
+  },
+  {
+    "version": "sota-1.0",
+    "slot": 360200450,
+    "block_time": 1755280185,
+    "tx_signature": "6MxsTAN5n0b4u8rMs1bNn5dXti0Gs0Wt5vMyE0H0mKkIMp7cYbsM4p6M4sc7u4oh6D4B5s0G1gMhTM0k2AzTMwt",
+    "signer": "JvdiCYc11w72YpWspurrvsqZrwrtONaXaGgEDaZZGgg",
+    "program": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "path": ["Raydium CLMM", "Orca Whirlpool"],
+    "legs": [
+      {
+        "inner_program": "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+        "amm": "Raydium CLMM",
+        "pool_id": "raydium_clmm_jup_usdc",
+        "sell_mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "buy_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "sell_amount": 500.0,
+        "buy_amount": 625.0,
+        "slippage": {
+          "effective_price": 1.25,
+          "price_before": 1.249,
+          "price_after": 1.251,
+          "fee_bps": 15.0,
+          "price_impact_bps": 8.0,
+          "liquidity_before": 4200000.0,
+          "liquidity_after": 4137500.0
+        }
+      },
+      {
+        "inner_program": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",
+        "amm": "Orca Whirlpool",
+        "pool_id": "orca_whirlpool_usdc_jup",
+        "sell_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "buy_mint": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+        "sell_amount": 625.0,
+        "buy_amount": 508.13,
+        "slippage": {
+          "effective_price": 1.23,
+          "price_before": 1.229,
+          "price_after": 1.231,
+          "fee_bps": 5.0,
+          "price_impact_bps": 8.1,
+          "liquidity_before": 3800000.0,
+          "liquidity_after": 3862500.0
+        }
+      }
+    ],
+    "revenue_sol": 0.0052,
+    "costs": {
+      "tx_fee_sol": 0.00001,
+      "priority_fee_sol": 0.00015,
+      "jito_tip_sol": 0.0,
+      "total_cost_sol": 0.00016
+    },
+    "profit": {
+      "gross_sol": 0.0052,
+      "net_sol": 0.00504,
+      "roi": 31.5
+    },
+    "priority": {
+      "cu_used": 320000,
+      "cu_price_micro_lamports": 468,
+      "priority_lamports": 149.76
+    },
+    "latency": {
+      "submit_to_land_ms": 420
+    },
+    "classification": {
+      "type": "dex<->dex_two_leg",
+      "dex_count": 2,
+      "amm_count": 2
+    },
+    "market": {
+      "snapshot_id": "jup-usdc-360200450",
+      "mid_across_dex": {
+        "Raydium": 1.25,
+        "Orca": 1.23
+      },
+      "depth_top": {
+        "Raydium": 4200000,
+        "Orca": 3800000
+      },
+      "spread_bps": 16.2,
+      "volatility_5s_bps": 31.4
+    },
+    "risk": {
+      "sandwich_risk_bps": 8.2,
+      "backrun_seen": true,
+      "honeypot_flag": false,
+      "token_age_sec": 47304000,
+      "ownership_concentration_pct": 4.7,
+      "freeze_auth_present": false,
+      "mint_auth_present": false
+    },
+    "signer_reputation": {
+      "success_rate_7d": 0.69,
+      "pnl_7d_sol": 87.2,
+      "avg_roi_7d": 0.0072
+    },
+    "confidence": 0.88,
+    "label_is_arb": 1,
+    "target_net_profit_sol": 0.00504,
+    "target_roi": 31.5
+  },
+  {
+    "version": "sota-1.0",
+    "slot": 360200600,
+    "block_time": 1755280245,
+    "tx_signature": "7NytUBO6o1c5v9sNt2cOo6eYuj1Ht1Xu6wNzF1I1nLlJNq8dZctN5q7N5td8v5pi7E5C6t1H2hNiUN1l3BaUNxu",
+    "signer": "KwekCZd22x83ZqXvttrsavqqZrxoqPWaFhgGDaZZHhh",
+    "program": "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
+    "path": ["Meteora DLMM", "Phoenix"],
+    "legs": [
+      {
+        "inner_program": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",
+        "amm": "Meteora DLMM",
+        "pool_id": "meteora_dlmm_samo_usdc",
+        "sell_mint": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "buy_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "sell_amount": 10000.0,
+        "buy_amount": 245.0,
+        "slippage": {
+          "effective_price": 0.0245,
+          "price_before": 0.02448,
+          "price_after": 0.02451,
+          "fee_bps": 20.0,
+          "price_impact_bps": 12.2,
+          "liquidity_before": 2100000.0,
+          "liquidity_after": 2075500.0
+        }
+      },
+      {
+        "inner_program": "PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY",
+        "amm": "Phoenix",
+        "pool_id": "phoenix_clob_usdc_samo",
+        "sell_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "buy_mint": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        "sell_amount": 245.0,
+        "buy_amount": 10150.0,
+        "slippage": {
+          "effective_price": 0.02414,
+          "price_before": 0.02412,
+          "price_after": 0.02415,
+          "fee_bps": 10.0,
+          "price_impact_bps": 12.4,
+          "liquidity_before": 1800000.0,
+          "liquidity_after": 1824500.0
+        }
+      }
+    ],
+    "revenue_sol": 0.0037,
+    "costs": {
+      "tx_fee_sol": 0.00001,
+      "priority_fee_sol": 0.00006,
+      "jito_tip_sol": 0.0,
+      "total_cost_sol": 0.00007
+    },
+    "profit": {
+      "gross_sol": 0.0037,
+      "net_sol": 0.00363,
+      "roi": 51.86
+    },
+    "priority": {
+      "cu_used": 290000,
+      "cu_price_micro_lamports": 206,
+      "priority_lamports": 59.74
+    },
+    "latency": {
+      "submit_to_land_ms": 510
+    },
+    "classification": {
+      "type": "dex<->dex_two_leg",
+      "dex_count": 2,
+      "amm_count": 2
+    },
+    "market": {
+      "snapshot_id": "samo-usdc-360200600",
+      "mid_across_dex": {
+        "Meteora": 0.02449,
+        "Phoenix": 0.02413
+      },
+      "depth_top": {
+        "Meteora": 2100000,
+        "Phoenix": 1800000
+      },
+      "spread_bps": 14.7,
+      "volatility_5s_bps": 42.8
+    },
+    "risk": {
+      "sandwich_risk_bps": 12.4,
+      "backrun_seen": false,
+      "honeypot_flag": false,
+      "token_age_sec": 126144000,
+      "ownership_concentration_pct": 8.9,
+      "freeze_auth_present": false,
+      "mint_auth_present": true
+    },
+    "signer_reputation": {
+      "success_rate_7d": 0.58,
+      "pnl_7d_sol": -12.3,
+      "avg_roi_7d": -0.0023
+    },
+    "confidence": 0.74,
+    "label_is_arb": 1,
+    "target_net_profit_sol": 0.00363,
+    "target_roi": 51.86
+  }
+]

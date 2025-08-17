@@ -1,0 +1,16 @@
+{
+  "extends": "../../configs/tsconfig/react.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".turbo", "**/*.stories.tsx", "**/*.test.tsx"]
+}

@@ -1,0 +1,108 @@
+groups:
+  - name: sandwich_slo_alerts
+    interval: 10s
+    rules:
+      # Latency SLO alerts
+      - alert: DecisionLatencyHigh
+        expr: histogram_quantile(0.5, sandwich_decision_time_microseconds) > 8000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Median decision latency exceeds 8ms SLO"
+          description: "Median latency: {{ $value }}μs"
+          
+      - alert: DecisionLatencyP99High
+        expr: histogram_quantile(0.99, sandwich_decision_time_microseconds) > 20000
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "P99 decision latency exceeds 20ms SLO"
+          description: "P99 latency: {{ $value }}μs"
+          
+      # Success rate alerts
+      - alert: LandingRateLow
+        expr: sandwich_overall_success_rate < 0.65
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bundle landing rate below 65% SLO"
+          description: "Current rate: {{ $value | humanizePercentage }}"
+          
+      - alert: LandingRateCritical
+        expr: sandwich_overall_success_rate < 0.50
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Bundle landing rate critically low"
+          description: "Current rate: {{ $value | humanizePercentage }}"
+          
+      # PnL alerts
+      - alert: NegativePnL
+        expr: sandwich_rolling_pnl_sol < 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Rolling PnL is negative"
+          description: "Current PnL: {{ $value }} SOL"
+          
+      - alert: ConsecutiveLosses
+        expr: increase(sandwich_risk_rejections_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of risk rejections"
+          description: "Rejections in last 5m: {{ $value }}"
+          
+      # Throughput alerts
+      - alert: LowDecisionRate
+        expr: sandwich_decisions_per_second < 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Decision rate below expected"
+          description: "Current rate: {{ $value }}/s"
+          
+      - alert: DatabaseWritesSlow
+        expr: rate(sandwich_batch_processing_time_microseconds[1m]) > 50000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database writes are slow"
+          description: "Average batch time: {{ $value }}μs"
+          
+      # ML inference alerts
+      - alert: MLInferenceSlow
+        expr: histogram_quantile(0.99, sandwich_ml_inference_microseconds) > 100
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML inference exceeds 100μs target"
+          description: "P99 inference: {{ $value }}μs"
+          
+      # System health alerts
+      - alert: HighMemoryUsage
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "System memory critically low"
+          description: "Available memory: {{ $value | humanizePercentage }}"
+          
+      - alert: HighCPUUsage
+        expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[1m]))) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage above 90%"
+          description: "Current CPU usage: {{ $value | humanizePercentage }}"

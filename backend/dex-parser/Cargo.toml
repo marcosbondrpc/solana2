@@ -1,0 +1,30 @@
+[package]
+name = "dex-parser"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared-types = { path = "../shared-types" }
+tokio = { workspace = true }
+solana-sdk = { workspace = true }
+solana-account-decoder = { workspace = true }
+bytes = { workspace = true }
+nom = { workspace = true }
+bytemuck = { workspace = true }
+zerocopy = { workspace = true }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam = { workspace = true }
+arc-swap = { workspace = true }
+ethnum = { workspace = true }
+tracing = { workspace = true }
+prometheus = { workspace = true }
+serde = { workspace = true }
+borsh = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+once_cell = { workspace = true }
+libc = { workspace = true }
+nix = { workspace = true }
+rayon = "1.10"
+ahash = { workspace = true }

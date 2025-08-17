@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+target/
+dist/
+build/
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Build artifacts
+*.so
+*.dll
+*.dylib
+*.exe
+
+# Data files
+*.parquet
+*.csv
+datasets/
+checkpoints/
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Docker volumes
+docker-volumes/
+
+# Secrets - NEVER commit these
+*.key
+*.pem
+*.cert
+private-keys/
+wallets/
+
+# GitHub token - IMPORTANT
+.github-token
+github-token.txt

@@ -1,0 +1,33 @@
+{
+  "name": "@solana-mev/utils",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "bench": "vitest bench",
+    "clean": "rm -rf dist .turbo node_modules"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.87.6",
+    "bignumber.js": "^9.1.2",
+    "date-fns": "^3.2.0",
+    "lodash-es": "^4.17.21",
+    "numeral": "^2.0.6",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^20.11.0",
+    "@types/numeral": "^2.0.5",
+    "@types/uuid": "^9.0.7",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.3"
+  }
+}

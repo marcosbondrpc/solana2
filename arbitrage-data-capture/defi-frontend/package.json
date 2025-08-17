@@ -1,0 +1,42 @@
+{
+  "name": "defi-frontend-legendary",
+  "version": "1.0.0",
+  "description": "Ultra-high-performance DeFi frontend for Solana MEV infrastructure",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "proto:generate": "npm run proto:js && npm run proto:ts",
+    "proto:js": "pbjs -t static-module -w es6 -o ./lib/proto/realtime.js ../protocol/realtime.proto && pbjs -t static-module -w es6 -o ./lib/proto/control.js ../protocol/control.proto",
+    "proto:ts": "pbts -o ./lib/proto/realtime.d.ts ./lib/proto/realtime.js && pbts -o ./lib/proto/control.d.ts ./lib/proto/control.js"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@ant-design/plots": "^2.1.13",
+    "@solana/web3.js": "^1.87.6",
+    "antd": "^5.12.8",
+    "comlink": "^4.4.1",
+    "d3": "^7.8.5",
+    "fflate": "^0.8.1",
+    "immer": "^10.0.3",
+    "protobufjs": "^7.2.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "valtio": "^1.13.0",
+    "zstd-codec": "^0.1.5"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/react-syntax-highlighter": "^15.5.11",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-wasm": "^3.3.0",
+    "vite-plugin-worker": "^0.5.0"
+  }
+}

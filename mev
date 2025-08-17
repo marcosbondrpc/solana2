@@ -1,0 +1,52 @@
+#!/bin/bash
+# Solana MEV System Management Tool
+
+case "$1" in
+    start)
+        echo "🚀 Starting Solana MEV System..."
+        bash /home/kidgordones/0solana/node/scripts/start-services.sh
+        ;;
+    stop)
+        echo "🛑 Stopping Solana MEV System..."
+        lsof -ti:3001,8055,8081,8083,8085 2>/dev/null | xargs -r kill -9 2>/dev/null
+        echo "All services stopped"
+        ;;
+    restart)
+        echo "🔄 Restarting Solana MEV System..."
+        $0 stop
+        sleep 2
+        $0 start
+        ;;
+    status)
+        bash /home/kidgordones/0solana/node/scripts/check-status.sh
+        ;;
+    logs)
+        echo "📋 Showing logs (Ctrl+C to exit)..."
+        tail -f /tmp/*.log
+        ;;
+    enable)
+        echo "✅ Enabling auto-startup on boot..."
+        sudo systemctl enable solana-mev.service
+        echo "Service will start automatically on system boot"
+        ;;
+    disable)
+        echo "❌ Disabling auto-startup..."
+        sudo systemctl disable solana-mev.service
+        echo "Service will NOT start automatically on boot"
+        ;;
+    *)
+        echo "Solana MEV System Manager"
+        echo "Usage: $0 {start|stop|restart|status|logs|enable|disable}"
+        echo ""
+        echo "Commands:"
+        echo "  start    - Start all services"
+        echo "  stop     - Stop all services"
+        echo "  restart  - Restart all services"
+        echo "  status   - Show service status"
+        echo "  logs     - Tail all service logs"
+        echo "  enable   - Enable auto-start on boot"
+        echo "  disable  - Disable auto-start on boot"
+        echo ""
+        echo "Frontend URL: http://45.157.234.184:3001"
+        ;;
+esac

@@ -1,0 +1,27 @@
+[package]
+name = "quic-service"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared-types = { path = "../shared-types" }
+tokio = { workspace = true }
+quinn = { workspace = true }
+rustls = { workspace = true }
+bytes = { workspace = true }
+parking_lot = { workspace = true }
+dashmap = { workspace = true }
+crossbeam = { workspace = true }
+arc-swap = { workspace = true }
+tracing = { workspace = true }
+prometheus = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+once_cell = { workspace = true }
+libc = { workspace = true }
+nix = { workspace = true }
+futures = "0.3"
+ring = "0.17"
+rcgen = "0.13"
+webpki = "0.22"

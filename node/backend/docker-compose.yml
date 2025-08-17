@@ -1,0 +1,237 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme} --maxmemory 2gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - API_PORT=3000
+      - API_HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - JWT_SECRET=${JWT_SECRET}
+      - OIDC_ISSUER=${OIDC_ISSUER}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - MTLS_ENABLED=${MTLS_ENABLED:-false}
+      - CSRF_ENABLED=true
+      - AUDIT_SIGNATURE_KEY=${AUDIT_SIGNATURE_KEY}
+    volumes:
+      - ./certs:/app/certs:ro
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  rpc-probe:
+    build:
+      context: ./rpc-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      - PORT=3010
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - SOLANA_RPC_ENDPOINTS=${SOLANA_RPC_ENDPOINTS}
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  validator-agent:
+    build:
+      context: ./validator-agent
+      dockerfile: Dockerfile
+    ports:
+      - "3020:3020"
+    environment:
+      - PORT=3020
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - VALIDATOR_CONFIG_PATH=/validator/config.yaml
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+    volumes:
+      - /var/run/dbus:/var/run/dbus:ro
+      - /run/systemd:/run/systemd:ro
+      - ${VALIDATOR_CONFIG_PATH}:/validator/config.yaml
+      - ${VALIDATOR_LEDGER_PATH}:/ledger
+    privileged: true
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  jito-probe:
+    build:
+      context: ./jito-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3030:3030"
+    environment:
+      - PORT=3030
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - JITO_BLOCK_ENGINE_URL=${JITO_BLOCK_ENGINE_URL}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  geyser-probe:
+    build:
+      context: ./geyser-probe
+      dockerfile: Dockerfile
+    ports:
+      - "3040:3040"
+    environment:
+      - PORT=3040
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - CLICKHOUSE_URL=${CLICKHOUSE_URL}
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  metrics:
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile
+    ports:
+      - "3050:3050"
+      - "9090:9090"
+    environment:
+      - PORT=3050
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - PROMETHEUS_PORT=9090
+      - VICTORIA_METRICS_URL=${VICTORIA_METRICS_URL}
+      - LOKI_URL=${LOKI_URL}
+    volumes:
+      - prometheus-data:/prometheus
+      - ./metrics/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./metrics/alerts.yml:/etc/prometheus/alerts.yml
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  controls:
+    build:
+      context: ./controls
+      dockerfile: Dockerfile
+    ports:
+      - "3060:3060"
+    environment:
+      - PORT=3060
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - LEDGER_PATH=${VALIDATOR_LEDGER_PATH}
+      - SNAPSHOTS_PATH=${SNAPSHOTS_PATH}
+      - CONFIG_PATH=${VALIDATOR_CONFIG_PATH}
+      - AUDIT_SIGNATURE_KEY=${AUDIT_SIGNATURE_KEY}
+    volumes:
+      - ${VALIDATOR_LEDGER_PATH}:/ledger
+      - ${SNAPSHOTS_PATH}:/snapshots
+      - ${VALIDATOR_CONFIG_PATH}:/config
+    networks:
+      - solana-backend
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Ultra-high-performance MEV backend service
+  mev-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "9091:9090"
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=1
+      - JITO_AUTH_KEYPAIR=/keys/jito-auth.json
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      - JITO_BLOCK_ENGINE_URL=${JITO_BLOCK_ENGINE_URL:-https://mainnet.block-engine.jito.wtf}
+    volumes:
+      - ./config.toml:/config/config.toml:ro
+      - ${JITO_AUTH_KEYPAIR:-./keys/jito-auth.json}:/keys/jito-auth.json:ro
+    networks:
+      - solana-backend
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+      memlock:
+        soft: -1
+        hard: -1
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 4G
+        reservations:
+          cpus: '4'
+          memory: 2G
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - solana-backend
+    depends_on:
+      - api-gateway
+      - mev-backend
+    restart: unless-stopped
+
+networks:
+  solana-backend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 9000
+
+volumes:
+  redis-data:
+  prometheus-data:

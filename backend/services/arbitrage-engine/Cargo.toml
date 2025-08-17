@@ -1,0 +1,48 @@
+[package]
+name = "arbitrage-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+solana-sdk = { workspace = true }
+solana-client = { workspace = true }
+solana-transaction-status = { workspace = true }
+ethnum = { workspace = true }
+rust_decimal = { workspace = true }
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+arc-swap = { workspace = true }
+clickhouse = { workspace = true }
+redis = { workspace = true }
+rdkafka = { workspace = true }
+prometheus = { workspace = true }
+tracing = { workspace = true }
+bytes = { workspace = true }
+bincode = { workspace = true }
+borsh = { workspace = true }
+crossbeam = { workspace = true }
+rayon = "1.10"
+petgraph = "0.6"
+priority-queue = "2.1"
+ahash = { workspace = true }
+indexmap = { workspace = true }
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+core_affinity = "0.8"
+dex-registry = { path = "../dex-registry" }
+rust-common = { path = "../../shared/rust-common" }
+backend-shared-strategy = { path = "../../shared/strategy" }
+shared-types = { path = "../../shared-types" }
+
+[[bin]]
+name = "arbitrage-engine"
+path = "src/main.rs"

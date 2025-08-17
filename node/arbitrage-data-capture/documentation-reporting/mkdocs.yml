@@ -1,0 +1,168 @@
+site_name: Arbitrage Detection Infrastructure Documentation
+site_description: Comprehensive documentation for MEV extraction and arbitrage detection system
+site_author: DeFi Engineering Team
+site_url: https://arbitrage-docs.example.com
+copyright: Copyright &copy; 2024 - DeFi Engineering
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    logo: material/currency-usd
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting-started/overview.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - Architecture:
+    - System Overview: architecture/system-overview.md
+    - Component Architecture: architecture/components.md
+    - Data Flow: architecture/data-flow.md
+    - Security Model: architecture/security.md
+    - Performance Optimization: architecture/performance.md
+  - Database:
+    - ClickHouse Schema: database/clickhouse-schema.md
+    - Redis Configuration: database/redis-config.md
+    - Query Optimization: database/query-optimization.md
+    - Backup & Recovery: database/backup-recovery.md
+  - ML Models:
+    - Model Architecture: ml/architecture.md
+    - Training Pipeline: ml/training.md
+    - Feature Engineering: ml/features.md
+    - Model Serving: ml/serving.md
+    - Performance Metrics: ml/metrics.md
+  - API Reference:
+    - REST API: api/rest.md
+    - WebSocket API: api/websocket.md
+    - GraphQL API: api/graphql.md
+    - Authentication: api/authentication.md
+  - MEV Strategies:
+    - Arbitrage Detection: strategies/arbitrage.md
+    - Sandwich Attacks: strategies/sandwich.md
+    - Backrunning: strategies/backrunning.md
+    - Bundle Optimization: strategies/bundles.md
+  - Operations:
+    - Deployment: operations/deployment.md
+    - Monitoring: operations/monitoring.md
+    - Alerting: operations/alerting.md
+    - Troubleshooting: operations/troubleshooting.md
+    - Maintenance: operations/maintenance.md
+  - Performance:
+    - Benchmarks: performance/benchmarks.md
+    - Tuning Guide: performance/tuning.md
+    - Latency Optimization: performance/latency.md
+    - Gas Optimization: performance/gas.md
+  - Reports:
+    - Daily Reports: reports/daily.md
+    - Performance Reports: reports/performance.md
+    - Business Metrics: reports/business.md
+    - Risk Analysis: reports/risk.md
+  - Developer Guide:
+    - Contributing: developer/contributing.md
+    - Code Standards: developer/standards.md
+    - Testing: developer/testing.md
+    - CI/CD: developer/cicd.md
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\-\.]'
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - mkdocstrings:
+      handlers:
+        python:
+          setup_commands:
+            - import sys
+            - sys.path.insert(0, ".")
+  - minify:
+      minify_html: true
+  - swagger-ui-tag
+  - print-site
+  - macros
+  - mermaid2:
+      arguments:
+        theme: dark
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - tables
+  - footnotes
+  - def_list
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/your-org/arbitrage-detector
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/your-org/arbitrage
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+  version:
+    provider: mike
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css:
+  - stylesheets/extra.css

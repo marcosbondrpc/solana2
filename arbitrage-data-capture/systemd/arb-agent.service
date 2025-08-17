@@ -1,0 +1,82 @@
+[Unit]
+Description=Arbitrage Agent - Cross-DEX Arbitrage Service
+Documentation=https://github.com/yourusername/mev-infrastructure
+After=network-online.target mev-control-plane.service
+Wants=network-online.target
+Requires=mev-control-plane.service
+
+[Service]
+Type=simple
+User=mev
+Group=mev
+WorkingDirectory=/home/kidgordones/0solana/node/arbitrage-data-capture
+
+# Environment configuration
+EnvironmentFile=-/etc/default/arb-agent
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+Environment="KAFKA_BROKERS=localhost:9092"
+Environment="CLICKHOUSE_URL=http://localhost:8123"
+Environment="REDIS_URL=redis://localhost:6379"
+Environment="SOLANA_RPC=https://api.mainnet-beta.solana.com"
+Environment="MIN_PROFIT_USD=10"
+Environment="FLASHLOAN_ENABLED=true"
+
+# CPU affinity and scheduling (cores 4-5, RT priority 30)
+CPUAffinity=4 5
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=30
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+Nice=-20
+
+# Memory and resource limits
+MemoryMax=6G
+MemoryHigh=4G
+TasksMax=4096
+LimitNOFILE=1048576
+LimitNPROC=32768
+LimitMEMLOCK=infinity
+
+# Security hardening
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=no
+ReadWritePaths=/tmp /var/log/mev /var/lib/arb
+
+# Process management
+Restart=always
+RestartSec=3
+TimeoutStartSec=30
+TimeoutStopSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Performance monitoring
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# Main executable with CPU pinning
+ExecStart=/usr/bin/taskset -c 4-5 \
+    /usr/bin/chrt -f 30 \
+    /home/kidgordones/0solana/node/arbitrage-data-capture/target/release/arb_agent \
+    --pairs all \
+    --min-profit-usd ${MIN_PROFIT_USD} \
+    --flashloan-enabled \
+    --multi-hop \
+    --verbose
+
+# Graceful shutdown
+ExecStop=/bin/kill -INT $MAINPID
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal+console
+StandardError=journal+console
+SyslogIdentifier=arb-agent
+
+[Install]
+WantedBy=multi-user.target

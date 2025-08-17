@@ -1,0 +1,173 @@
+version: '3.9'
+
+# Production overrides for docker-compose.yml
+services:
+  redpanda:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '8'
+          memory: 32G
+        reservations:
+          cpus: '4'
+          memory: 16G
+    environment:
+      - REDPANDA_ENVIRONMENT=production
+      - REDPANDA_CLUSTER_ID=solana-historical-prod
+    volumes:
+      - /mnt/nvme/redpanda:/var/lib/redpanda/data
+
+  clickhouse:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '16'
+          memory: 64G
+        reservations:
+          cpus: '8'
+          memory: 32G
+    environment:
+      - CLICKHOUSE_MAX_MEMORY_USAGE=60000000000
+      - CLICKHOUSE_MAX_THREADS=32
+      - CLICKHOUSE_BACKGROUND_POOL_SIZE=64
+    volumes:
+      - /mnt/nvme/clickhouse:/var/lib/clickhouse
+      - /mnt/ssd/clickhouse-cold:/var/lib/clickhouse/cold
+
+  rust-ingester:
+    build:
+      context: ./rust-ingester
+      dockerfile: Dockerfile
+    image: solana-historical-ingester:latest
+    container_name: solana-rust-ingester
+    restart: always
+    networks:
+      - solana-history
+    environment:
+      - RUST_LOG=info
+      - YELLOWSTONE_ENDPOINT=${YELLOWSTONE_ENDPOINT}
+      - YELLOWSTONE_TOKEN=${YELLOWSTONE_TOKEN}
+      - KAFKA_BROKERS=redpanda:9092
+      - BUFFER_SIZE=1000000
+      - PRODUCER_THREADS=16
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  backfill-worker:
+    build:
+      context: ./backfill-worker
+      dockerfile: Dockerfile
+    image: solana-backfill-worker:latest
+    container_name: solana-backfill-worker
+    restart: always
+    networks:
+      - solana-history
+    environment:
+      - NODE_ENV=production
+      - RPC_ENDPOINTS=${RPC_ENDPOINTS}
+      - KAFKA_BROKERS=redpanda:9092
+      - CLICKHOUSE_HOST=clickhouse
+      - REDIS_URL=redis://redis:6379
+      - CONCURRENCY=200
+      - BATCH_SIZE=200
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: solana-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - solana-history
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: solana-prometheus
+    restart: always
+    ports:
+      - "9093:9090"
+    networks:
+      - solana-history
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: solana-grafana
+    restart: always
+    ports:
+      - "3003:3000"
+    networks:
+      - solana-history
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=mev_billions_2025
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

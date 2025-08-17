@@ -1,0 +1,88 @@
+[Unit]
+Description=MEV Control Plane API Service
+Documentation=https://github.com/yourusername/mev-infrastructure
+After=network-online.target clickhouse-server.service redis.service
+Wants=network-online.target
+Requires=clickhouse-server.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=mev
+Group=mev
+WorkingDirectory=/home/kidgordones/0solana/node/arbitrage-data-capture
+
+# Environment configuration
+EnvironmentFile=-/etc/default/mev-control-plane
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+Environment="KAFKA_BROKERS=localhost:9092"
+Environment="CLICKHOUSE_URL=http://localhost:8123"
+Environment="REDIS_URL=redis://localhost:6379"
+Environment="SOLANA_RPC=https://api.mainnet-beta.solana.com"
+
+# CPU affinity and scheduling (cores 10-11, RT priority 10)
+CPUAffinity=10 11
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=10
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+
+# Memory and resource limits
+MemoryMax=4G
+MemoryHigh=3G
+TasksMax=4096
+LimitNOFILE=1048576
+LimitNPROC=32768
+LimitMEMLOCK=infinity
+
+# Security hardening
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=no
+LockPersonality=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadWritePaths=/tmp /var/log/mev
+
+# Process management
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
+
+# Health check
+ExecStartPre=/usr/bin/env bash -c 'until clickhouse-client --query "SELECT 1" &>/dev/null; do sleep 1; done'
+ExecStartPre=/usr/bin/env bash -c 'until redis-cli ping &>/dev/null; do sleep 1; done'
+
+# Main executable
+ExecStart=/usr/bin/env uvicorn api.main:app \
+    --host 0.0.0.0 \
+    --port 8080 \
+    --workers 4 \
+    --loop uvloop \
+    --log-level info \
+    --access-log \
+    --worker-class uvicorn.workers.UvicornWorker
+
+# Graceful reload
+ExecReload=/bin/kill -USR1 $MAINPID
+
+# Post-start health check
+ExecStartPost=/usr/bin/env bash -c 'for i in {1..30}; do curl -f http://localhost:8080/health && exit 0 || sleep 1; done; exit 1'
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mev-control-plane
+
+[Install]
+WantedBy=multi-user.target

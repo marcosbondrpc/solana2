@@ -1,0 +1,38 @@
+# Prometheus configuration for MEV Sandwich Detector
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels:
+    monitor: 'mev-sandwich'
+    
+scrape_configs:
+  # Sandwich detector metrics
+  - job_name: 'sandwich-detector'
+    static_configs:
+      - targets: ['localhost:9091']
+    metrics_path: /metrics
+    
+  # ClickHouse metrics
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['localhost:9363']
+      
+  # Kafka metrics
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['localhost:9308']
+      
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+
+# Alerting rules
+rule_files:
+  - 'alerts.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['localhost:9093']

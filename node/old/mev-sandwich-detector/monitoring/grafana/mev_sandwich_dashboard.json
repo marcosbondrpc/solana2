@@ -1,0 +1,402 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "mev-sandwich-detector",
+    "title": "MEV Sandwich Detector - Ultra Performance",
+    "tags": ["mev", "sandwich", "performance", "defi"],
+    "timezone": "browser",
+    "schemaVersion": 30,
+    "version": 1,
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "type": "stat",
+        "title": "Decision Latency (p99)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(sandwich_decision_time_microseconds_bucket[1m]))",
+            "legendFormat": "p99 latency"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 5000},
+                {"color": "red", "value": 8000}
+              ]
+            },
+            "unit": "µs",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "type": "stat",
+        "title": "ML Inference Time",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(sandwich_ml_inference_microseconds_bucket[1m]))",
+            "legendFormat": "p99 inference"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 75},
+                {"color": "red", "value": 100}
+              ]
+            },
+            "unit": "µs",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+        "type": "stat",
+        "title": "Decisions/Second",
+        "targets": [
+          {
+            "expr": "sandwich_decisions_per_second",
+            "legendFormat": "DPS"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 100},
+                {"color": "green", "value": 500}
+              ]
+            },
+            "unit": "ops",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+        "type": "stat",
+        "title": "Total Profit",
+        "targets": [
+          {
+            "expr": "sandwich_total_profit_sol",
+            "legendFormat": "Profit"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0},
+                {"color": "green", "value": 10}
+              ]
+            },
+            "unit": "SOL",
+            "decimals": 4
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 4},
+        "type": "timeseries",
+        "title": "Decision Latency Distribution",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(sandwich_decision_time_microseconds_bucket[1m]))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(sandwich_decision_time_microseconds_bucket[1m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(sandwich_decision_time_microseconds_bucket[1m]))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "µs",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "gradientMode": "opacity",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "tooltip": false,
+                "viz": false,
+                "legend": false
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "red", "value": 8000}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 4},
+        "type": "timeseries",
+        "title": "Bundle Success Rate",
+        "targets": [
+          {
+            "expr": "sandwich_tpu_success_rate",
+            "legendFormat": "TPU"
+          },
+          {
+            "expr": "sandwich_jito_success_rate",
+            "legendFormat": "Jito"
+          },
+          {
+            "expr": "sandwich_overall_success_rate",
+            "legendFormat": "Overall"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "gradientMode": "opacity",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 0.5},
+                {"color": "green", "value": 0.65}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 10},
+        "type": "heatmap",
+        "title": "Profit Distribution Heatmap",
+        "targets": [
+          {
+            "expr": "rate(sandwich_profit_per_bundle_lamports_bucket[5m])",
+            "format": "heatmap",
+            "legendFormat": "{{le}}"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "yAxis": {
+            "axisPlacement": "left",
+            "reverse": false,
+            "unit": "short",
+            "axisLabel": "Profit (lamports)"
+          },
+          "rowsFrame": {
+            "layout": "auto",
+            "value": "Count"
+          },
+          "color": {
+            "mode": "scheme",
+            "scheme": "Spectral",
+            "reverse": false,
+            "min": 0,
+            "max": null,
+            "exponent": 0.5
+          },
+          "cellGap": 1,
+          "filterValues": {
+            "le": 1e-9
+          },
+          "tooltip": {
+            "show": true,
+            "showColorScale": false
+          },
+          "exemplars": {
+            "color": "rgba(255,0,255,0.7)"
+          },
+          "legend": {
+            "show": true
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 10},
+        "type": "gauge",
+        "title": "Risk Manager Status",
+        "targets": [
+          {
+            "expr": "1 - (sandwich_risk_rejections_total / sandwich_bundles_submitted_total)",
+            "legendFormat": "Approval Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "percentage",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 60},
+                {"color": "green", "value": 80}
+              ]
+            },
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1
+          }
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 10},
+        "type": "stat",
+        "title": "Network Stats",
+        "targets": [
+          {
+            "expr": "sandwich_active_connections",
+            "legendFormat": "Active Connections"
+          },
+          {
+            "expr": "rate(sandwich_dedupe_hits_total[1m])",
+            "legendFormat": "Dedupe Hits/s"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0,
+            "custom": {
+              "align": "auto",
+              "displayMode": "color-background",
+              "inspect": false
+            }
+          }
+        },
+        "options": {
+          "orientation": "vertical",
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 5, "w": 24, "x": 0, "y": 16},
+        "type": "logs",
+        "title": "Recent Sandwich Decisions",
+        "datasource": "Loki",
+        "targets": [
+          {
+            "expr": "{job=\"mev-sandwich\"} |= \"SANDWICH\" | json | line_format \"{{.timestamp}} Profit: {{.expected_profit}} Confidence: {{.confidence}}\"",
+            "legendFormat": ""
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": false,
+          "sortOrder": "Descending",
+          "prettifyLogMessage": false,
+          "enableLogDetails": true
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "refresh_interval",
+          "type": "interval",
+          "current": {
+            "selected": true,
+            "text": "5s",
+            "value": "5s"
+          },
+          "hide": 0,
+          "options": [
+            {"selected": false, "text": "1s", "value": "1s"},
+            {"selected": true, "text": "5s", "value": "5s"},
+            {"selected": false, "text": "10s", "value": "10s"},
+            {"selected": false, "text": "30s", "value": "30s"},
+            {"selected": false, "text": "1m", "value": "1m"}
+          ]
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "sandwich_bundles_landed_total",
+          "iconColor": "green",
+          "name": "Bundle Landed",
+          "step": "10s",
+          "tagKeys": "bundle_id",
+          "textFormat": "Bundle landed: {{bundle_id}}",
+          "titleFormat": "Landed"
+        }
+      ]
+    }
+  }
+}

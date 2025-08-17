@@ -1,0 +1,458 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Solana Arbitrage Transaction Schema",
+  "description": "SOTA-1.0 schema for capturing arbitrage opportunities for ML training",
+  "type": "object",
+  "required": [
+    "version",
+    "slot",
+    "block_time",
+    "tx_signature",
+    "signer",
+    "program",
+    "path",
+    "legs",
+    "revenue_sol",
+    "costs",
+    "profit",
+    "priority",
+    "latency",
+    "classification",
+    "market",
+    "risk",
+    "signer_reputation",
+    "confidence",
+    "label_is_arb",
+    "target_net_profit_sol",
+    "target_roi"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^sota-\\d+\\.\\d+$",
+      "description": "Schema version identifier"
+    },
+    "slot": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Solana slot number"
+    },
+    "block_time": {
+      "type": "integer",
+      "description": "Unix timestamp of block"
+    },
+    "tx_signature": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{87,88}$",
+      "description": "Base58 encoded transaction signature"
+    },
+    "signer": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+      "description": "Base58 encoded signer address"
+    },
+    "program": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+      "description": "Main program ID used"
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 2,
+      "description": "Sequence of DEX programs in arbitrage path"
+    },
+    "legs": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/definitions/leg"
+      },
+      "description": "Individual swap legs in the arbitrage"
+    },
+    "revenue_sol": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total revenue in SOL"
+    },
+    "costs": {
+      "$ref": "#/definitions/costs"
+    },
+    "profit": {
+      "$ref": "#/definitions/profit"
+    },
+    "priority": {
+      "$ref": "#/definitions/priority"
+    },
+    "latency": {
+      "$ref": "#/definitions/latency"
+    },
+    "classification": {
+      "$ref": "#/definitions/classification"
+    },
+    "market": {
+      "$ref": "#/definitions/market"
+    },
+    "risk": {
+      "$ref": "#/definitions/risk"
+    },
+    "signer_reputation": {
+      "$ref": "#/definitions/signer_reputation"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score of arbitrage detection"
+    },
+    "label_is_arb": {
+      "type": "integer",
+      "enum": [0, 1],
+      "description": "Binary label: 1 if arbitrage, 0 otherwise"
+    },
+    "target_net_profit_sol": {
+      "type": "number",
+      "description": "Target net profit in SOL"
+    },
+    "target_roi": {
+      "type": "number",
+      "description": "Target return on investment"
+    }
+  },
+  "definitions": {
+    "leg": {
+      "type": "object",
+      "required": [
+        "inner_program",
+        "amm",
+        "pool_id",
+        "sell_mint",
+        "buy_mint",
+        "sell_amount",
+        "buy_amount",
+        "slippage"
+      ],
+      "properties": {
+        "inner_program": {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+          "description": "Program ID for this leg"
+        },
+        "amm": {
+          "type": "string",
+          "description": "AMM type (e.g., Raydium CPMM)"
+        },
+        "pool_id": {
+          "type": "string",
+          "description": "Unique pool identifier"
+        },
+        "sell_mint": {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+          "description": "Token mint being sold"
+        },
+        "buy_mint": {
+          "type": "string",
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]{43,44}$",
+          "description": "Token mint being bought"
+        },
+        "sell_amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Amount of tokens sold"
+        },
+        "buy_amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Amount of tokens bought"
+        },
+        "slippage": {
+          "$ref": "#/definitions/slippage"
+        }
+      }
+    },
+    "slippage": {
+      "type": "object",
+      "required": [
+        "effective_price",
+        "price_before",
+        "price_after",
+        "fee_bps",
+        "price_impact_bps",
+        "liquidity_before",
+        "liquidity_after"
+      ],
+      "properties": {
+        "effective_price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Actual execution price"
+        },
+        "price_before": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price before trade"
+        },
+        "price_after": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price after trade"
+        },
+        "fee_bps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Fee in basis points"
+        },
+        "price_impact_bps": {
+          "type": "number",
+          "description": "Price impact in basis points"
+        },
+        "liquidity_before": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Liquidity before trade"
+        },
+        "liquidity_after": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Liquidity after trade"
+        }
+      }
+    },
+    "costs": {
+      "type": "object",
+      "required": [
+        "tx_fee_sol",
+        "priority_fee_sol",
+        "jito_tip_sol",
+        "total_cost_sol"
+      ],
+      "properties": {
+        "tx_fee_sol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Base transaction fee"
+        },
+        "priority_fee_sol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Priority fee paid"
+        },
+        "jito_tip_sol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Jito bundle tip"
+        },
+        "total_cost_sol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total costs"
+        }
+      }
+    },
+    "profit": {
+      "type": "object",
+      "required": [
+        "gross_sol",
+        "net_sol",
+        "roi"
+      ],
+      "properties": {
+        "gross_sol": {
+          "type": "number",
+          "description": "Gross profit in SOL"
+        },
+        "net_sol": {
+          "type": "number",
+          "description": "Net profit in SOL"
+        },
+        "roi": {
+          "type": "number",
+          "description": "Return on investment"
+        }
+      }
+    },
+    "priority": {
+      "type": "object",
+      "required": [
+        "cu_used",
+        "cu_price_micro_lamports",
+        "priority_lamports"
+      ],
+      "properties": {
+        "cu_used": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Compute units used"
+        },
+        "cu_price_micro_lamports": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Price per compute unit"
+        },
+        "priority_lamports": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total priority fee in lamports"
+        }
+      }
+    },
+    "latency": {
+      "type": "object",
+      "required": [
+        "submit_to_land_ms"
+      ],
+      "properties": {
+        "submit_to_land_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Time from submission to landing in ms"
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "required": [
+        "type",
+        "dex_count",
+        "amm_count"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "dex<->dex_two_leg",
+            "dex<->dex_three_leg",
+            "dex<->dex_multi_leg",
+            "cex<->dex",
+            "triangular",
+            "cyclic"
+          ],
+          "description": "Type of arbitrage"
+        },
+        "dex_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of DEXs involved"
+        },
+        "amm_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of AMMs involved"
+        }
+      }
+    },
+    "market": {
+      "type": "object",
+      "required": [
+        "snapshot_id",
+        "mid_across_dex",
+        "depth_top",
+        "spread_bps",
+        "volatility_5s_bps"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "description": "Unique market snapshot identifier"
+        },
+        "mid_across_dex": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Mid prices across DEXs"
+        },
+        "depth_top": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Top of book depth per DEX"
+        },
+        "spread_bps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Spread in basis points"
+        },
+        "volatility_5s_bps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "5-second volatility in basis points"
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "sandwich_risk_bps",
+        "backrun_seen",
+        "honeypot_flag",
+        "token_age_sec",
+        "ownership_concentration_pct",
+        "freeze_auth_present",
+        "mint_auth_present"
+      ],
+      "properties": {
+        "sandwich_risk_bps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sandwich attack risk in basis points"
+        },
+        "backrun_seen": {
+          "type": "boolean",
+          "description": "Whether backrun was detected"
+        },
+        "honeypot_flag": {
+          "type": "boolean",
+          "description": "Honeypot token indicator"
+        },
+        "token_age_sec": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Age of token in seconds"
+        },
+        "ownership_concentration_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Token ownership concentration percentage"
+        },
+        "freeze_auth_present": {
+          "type": "boolean",
+          "description": "Whether freeze authority exists"
+        },
+        "mint_auth_present": {
+          "type": "boolean",
+          "description": "Whether mint authority exists"
+        }
+      }
+    },
+    "signer_reputation": {
+      "type": "object",
+      "required": [
+        "success_rate_7d",
+        "pnl_7d_sol",
+        "avg_roi_7d"
+      ],
+      "properties": {
+        "success_rate_7d": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "7-day success rate"
+        },
+        "pnl_7d_sol": {
+          "type": "number",
+          "description": "7-day profit/loss in SOL"
+        },
+        "avg_roi_7d": {
+          "type": "number",
+          "description": "7-day average ROI"
+        }
+      }
+    }
+  }
+}

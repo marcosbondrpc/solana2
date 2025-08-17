@@ -1,0 +1,96 @@
+# Grafana ClickHouse Datasource Provisioning
+# Ultra-optimized for MEV infrastructure monitoring
+apiVersion: 1
+
+datasources:
+  - name: ClickHouse
+    uid: clickhouse-primary
+    type: grafana-clickhouse-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      server: "localhost"
+      port: 8123
+      protocol: "http"
+      defaultDatabase: "default"
+      username: "default"
+      
+      # Connection pooling for high-frequency queries
+      maxIdleConns: 100
+      maxOpenConns: 200
+      connMaxLifetime: 14400
+      
+      # Query optimization
+      queryTimeout: 60
+      roundInterval: true
+      addInterval: true
+      
+      # TLS configuration (disable for local, enable for prod)
+      tls:
+        skip_verify: true
+        
+      # Advanced settings for MEV queries
+      settings:
+        max_execution_time: 60
+        max_memory_usage: 10737418240  # 10GB
+        max_rows_to_read: 1000000000
+        max_result_rows: 1000000
+        result_overflow_mode: "break"
+        timeout_overflow_mode: "break"
+        
+      # Custom HTTP headers for authentication
+      httpHeaders:
+        - name: "X-ClickHouse-User"
+          value: "grafana"
+        - name: "X-ClickHouse-Key"
+          value: ""
+          
+    secureJsonData:
+      password: ""  # Set via environment variable in production
+      
+  # Secondary datasource for historical data (if using cluster)
+  - name: ClickHouse-Historical
+    uid: clickhouse-historical
+    type: grafana-clickhouse-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      server: "localhost"
+      port: 8123
+      protocol: "http"
+      defaultDatabase: "historical"
+      username: "default"
+      queryTimeout: 300  # 5 minutes for heavy analytical queries
+      
+      settings:
+        max_execution_time: 300
+        max_memory_usage: 53687091200  # 50GB for complex aggregations
+        distributed_product_mode: "global"
+        
+    secureJsonData:
+      password: ""
+      
+  # Real-time streaming datasource (for live MEV monitoring)
+  - name: ClickHouse-Realtime
+    uid: clickhouse-realtime
+    type: grafana-clickhouse-datasource
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      server: "localhost"
+      port: 8123
+      protocol: "http"
+      defaultDatabase: "realtime"
+      username: "streaming"
+      queryTimeout: 5  # Fast timeout for real-time queries
+      
+      settings:
+        max_execution_time: 5
+        max_memory_usage: 1073741824  # 1GB - keep it light for speed
+        readonly: 1  # Read-only for safety
+        
+    secureJsonData:
+      password: ""
