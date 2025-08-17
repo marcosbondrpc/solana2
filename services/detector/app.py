@@ -1,661 +1,574 @@
+#!/usr/bin/env python3
 """
-Elite MEV Detection FastAPI Service
-Real-time inference endpoints with ONNX model serving
-Target: P50 ≤1 slot, P95 ≤2 slots, ROC-AUC ≥0.95
+FastAPI Detection Service with ONNX Runtime
+DETECTION-ONLY: Pure inference, no execution
+Target: P50 <100μs, P99 <500μs inference latency
 """
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Any
-import asyncio
+from typing import List, Dict, Optional, Tuple
+import onnxruntime as ort
 import numpy as np
 import torch
-import time
+import asyncio
+import aioredis
+import clickhouse_driver
+from datetime import datetime
 import hashlib
 import json
-from datetime import datetime, timedelta
-import uvicorn
-from concurrent.futures import ThreadPoolExecutor
-import onnxruntime as ort
-from collections import defaultdict
-import clickhouse_driver
-import redis
-from prometheus_client import Counter, Histogram, Gauge, generate_latest
+import time
+import logging
 from contextlib import asynccontextmanager
+import uvloop
+import ed25519
 
-# Import detection models
-from models import (
-    RuleBasedDetector,
-    StatisticalAnomalyDetector,
-    GNNDetector,
-    TransformerDetector,
-    HybridMEVDetector,
-    ONNXModelServer,
-    DetectionResult
-)
-from entity_analyzer import BehavioralAnalyzer, BehavioralSpectrumAnalyzer
+# Use uvloop for better async performance
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-# Metrics
-detection_counter = Counter('mev_detections_total', 'Total MEV detections', ['mev_type'])
-latency_histogram = Histogram('detection_latency_ms', 'Detection latency in milliseconds')
-model_accuracy_gauge = Gauge('model_accuracy', 'Current model accuracy')
-entity_profiles_gauge = Gauge('entity_profiles_total', 'Total entity profiles')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Pydantic models
-class TransactionFeatures(BaseModel):
-    """Transaction features for detection"""
-    signature: str
+# Global model sessions
+gnn_session: Optional[ort.InferenceSession] = None
+transformer_session: Optional[ort.InferenceSession] = None
+redis_client: Optional[aioredis.Redis] = None
+ch_client: Optional[clickhouse_driver.Client] = None
+
+# Ed25519 signing for Decision DNA
+signing_key = ed25519.SigningKey(b'0' * 32)  # Replace with secure key
+verifying_key = signing_key.verifying_key
+
+class TransactionData(BaseModel):
+    """Input transaction data for detection"""
     slot: int
-    block_time: Optional[float] = None
-    program_ids: List[str]
-    instruction_count: int
-    account_keys: List[str]
-    fee: int
-    compute_units: Optional[int] = 0
-    priority_fee: Optional[int] = 0
-    token_transfers: Optional[List[Dict]] = []
-    feature_hash: Optional[str] = None
+    sig: str
+    payer: str
+    programs: List[str]
+    ix_kinds: List[int]
+    accounts: List[str]
+    pool_keys: List[str] = []
+    amount_in: float = 0
+    amount_out: float = 0
+    token_in: Optional[str] = None
+    token_out: Optional[str] = None
+    fee: int = 0
+    priority_fee: int = 0
+    venue: Optional[str] = None
 
 class DetectionRequest(BaseModel):
-    """Detection request payload"""
-    transaction: Dict[str, Any]
-    features: TransactionFeatures
-    priority: bool = False
-
-class BatchDetectionRequest(BaseModel):
     """Batch detection request"""
-    transactions: List[DetectionRequest]
+    transactions: List[TransactionData]
+    window_size: int = Field(default=10, ge=1, le=100)
+    include_confidence: bool = True
+    include_dna: bool = True
 
-class DetectionResponse(BaseModel):
-    """Detection response with DNA tracking"""
-    is_mev: bool
-    mev_type: Optional[str]
-    confidence: float
-    attacker_address: Optional[str]
-    victim_address: Optional[str]
-    profit_estimate: Optional[float]
-    feature_importance: Dict[str, float]
-    decision_dna: str
-    inference_latency_ms: float
-    model_scores: Dict[str, float]
+class DetectionResult(BaseModel):
+    """Detection result with evidence"""
+    slot: int
+    sig: str
+    is_sandwich: bool
+    sandwich_score: float = Field(ge=0, le=1)
+    pattern_type: str  # 'normal', 'sandwich', 'backrun', 'liquidation', 'arbitrage'
+    confidence: float = Field(ge=0, le=1)
+    evidence: Dict[str, any]
+    dna_fingerprint: Optional[str] = None
+    signature: Optional[str] = None
+    latency_us: int
 
-class EntityProfileRequest(BaseModel):
-    """Entity profile request"""
-    address: str
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+class BehaviorProfile(BaseModel):
+    """Entity behavioral profile"""
+    entity_addr: str
+    attack_style: str  # 'surgical', 'shotgun', 'adaptive'
+    victim_selection: str  # 'retail', 'whale', 'bot', 'mixed'
+    risk_appetite: float = Field(ge=0, le=1)
+    fee_aggressiveness: float = Field(ge=0, le=1)
+    avg_response_ms: float
+    landing_rate: float = Field(ge=0, le=1)
+    total_extraction_sol: float
+    linked_wallets: List[str] = []
+    cluster_id: Optional[int] = None
 
-class EntityProfileResponse(BaseModel):
-    """Entity behavioral profile response"""
-    address: str
-    classification: str
-    risk_level: str
-    sophistication_score: float
-    behavioral_metrics: Dict[str, Any]
-    financial_metrics: Dict[str, Any]
-    operational_metrics: Dict[str, Any]
-    advanced_metrics: Dict[str, Any]
-    profile_dna: str
-    cluster_id: Optional[int]
-
-# Application lifespan management
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifecycle"""
-    # Startup
-    print("🚀 Initializing MEV Detection Service...")
+    """Startup and shutdown logic"""
+    global gnn_session, transformer_session, redis_client, ch_client
     
-    # Initialize models
-    app.state.models = await initialize_models()
+    # Load ONNX models
+    logger.info("Loading ONNX models...")
     
-    # Initialize connections
-    app.state.clickhouse = await connect_clickhouse()
-    app.state.redis = await connect_redis()
+    # Configure ONNX Runtime for low latency
+    sess_options = ort.SessionOptions()
+    sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    sess_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
+    sess_options.inter_op_num_threads = 4
+    sess_options.intra_op_num_threads = 4
     
-    # Initialize analyzers
-    app.state.behavioral_analyzer = BehavioralAnalyzer()
-    app.state.spectrum_analyzer = BehavioralSpectrumAnalyzer()
+    providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
     
-    # Start background tasks
-    app.state.executor = ThreadPoolExecutor(max_workers=10)
-    app.state.decision_chain = []
+    try:
+        gnn_session = ort.InferenceSession(
+            "/home/kidgordones/0solana/solana2/models/sandwich_gnn.onnx",
+            sess_options=sess_options,
+            providers=providers
+        )
+        logger.info("GNN model loaded successfully")
+    except Exception as e:
+        logger.warning(f"GNN model not found or failed to load: {e}")
     
-    print("✅ MEV Detection Service initialized")
+    try:
+        transformer_session = ort.InferenceSession(
+            "/home/kidgordones/0solana/solana2/models/mev_transformer.onnx",
+            sess_options=sess_options,
+            providers=providers
+        )
+        logger.info("Transformer model loaded successfully")
+    except Exception as e:
+        logger.warning(f"Transformer model not found or failed to load: {e}")
+    
+    # Connect to Redis for caching
+    try:
+        redis_client = await aioredis.create_redis_pool(
+            'redis://redis:6379',
+            minsize=5,
+            maxsize=10
+        )
+        logger.info("Redis connected")
+    except Exception as e:
+        logger.warning(f"Redis connection failed: {e}")
+    
+    # Connect to ClickHouse
+    try:
+        ch_client = clickhouse_driver.Client(
+            host='clickhouse',
+            port=9000,
+            settings={'use_numpy': True}
+        )
+        logger.info("ClickHouse connected")
+    except Exception as e:
+        logger.warning(f"ClickHouse connection failed: {e}")
     
     yield
     
-    # Shutdown
-    print("🛑 Shutting down MEV Detection Service...")
-    app.state.executor.shutdown(wait=True)
-    if app.state.clickhouse:
-        app.state.clickhouse.disconnect()
-    if app.state.redis:
-        await app.state.redis.close()
+    # Cleanup
+    if redis_client:
+        redis_client.close()
+        await redis_client.wait_closed()
 
-# Create FastAPI app
 app = FastAPI(
-    title="Elite MEV Detection Service",
-    description="State-of-the-art MEV behavioral analysis with sub-slot detection",
+    title="MEV Detection Service",
+    description="DETECTION-ONLY behavioral analysis for Solana MEV",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def generate_dna_fingerprint(data: Dict) -> str:
+    """Generate Decision DNA fingerprint with Ed25519 signature"""
+    # Create deterministic hash
+    data_str = json.dumps(data, sort_keys=True)
+    dna = hashlib.blake2b(data_str.encode(), digest_size=32).hexdigest()
+    return dna
 
-async def initialize_models():
-    """Initialize all detection models"""
-    models = {
-        'rule_based': RuleBasedDetector(),
-        'statistical': StatisticalAnomalyDetector(),
+def sign_decision(dna: str, decision: Dict) -> str:
+    """Sign decision with Ed25519"""
+    message = f"{dna}:{json.dumps(decision, sort_keys=True)}"
+    signature = signing_key.sign(message.encode())
+    return signature.hex()
+
+async def encode_instruction_sequence(programs: List[str], ix_kinds: List[int]) -> np.ndarray:
+    """Encode instruction sequence for transformer"""
+    # Simplified encoding - should match training
+    vocab = {
+        '11111111111111111111111111111111': 2,  # System
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA': 4,  # Token
+        '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8': 10,  # Raydium
+        'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4': 13,  # Jupiter
+        '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P': 20,  # Pump
     }
     
-    # Load neural network models if available
-    try:
-        models['gnn'] = GNNDetector()
-        models['gnn'].load_state_dict(torch.load('models/gnn_model.pth', map_location='cpu'))
-        models['gnn'].eval()
-    except:
-        print("⚠️ GNN model not available")
+    sequence = []
+    for prog in programs[:128]:  # Limit sequence length
+        sequence.append(vocab.get(prog, 1))  # 1 for unknown
     
-    try:
-        models['transformer'] = TransformerDetector()
-        models['transformer'].load_state_dict(torch.load('models/transformer_model.pth', map_location='cpu'))
-        models['transformer'].eval()
-    except:
-        print("⚠️ Transformer model not available")
+    # Pad to 128
+    while len(sequence) < 128:
+        sequence.append(0)
     
-    try:
-        models['hybrid'] = HybridMEVDetector()
-        models['hybrid'].load_state_dict(torch.load('models/hybrid_model.pth', map_location='cpu'))
-        models['hybrid'].eval()
-    except:
-        print("⚠️ Hybrid model not available")
-    
-    # Load ONNX models for production inference
-    try:
-        models['onnx_ensemble'] = ONNXModelServer('models/ensemble.onnx')
-    except:
-        print("⚠️ ONNX ensemble not available")
-    
-    return models
+    return np.array(sequence[:128], dtype=np.int64)
 
-async def connect_clickhouse():
-    """Connect to ClickHouse database"""
-    try:
-        client = clickhouse_driver.Client(
-            host='localhost',
-            port=9000,
-            database='default',
-            settings={'use_numpy': True}
-        )
-        return client
-    except Exception as e:
-        print(f"⚠️ ClickHouse connection failed: {e}")
-        return None
-
-async def connect_redis():
-    """Connect to Redis for caching"""
-    try:
-        import aioredis
-        redis = await aioredis.create_redis_pool(
-            'redis://localhost',
-            minsize=5,
-            maxsize=10
-        )
-        return redis
-    except Exception as e:
-        print(f"⚠️ Redis connection failed: {e}")
-        return None
-
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "MEV Detection Service",
-        "timestamp": datetime.utcnow().isoformat(),
-        "models_loaded": list(app.state.models.keys())
+async def run_gnn_inference(graph_features: np.ndarray) -> Tuple[float, str]:
+    """Run GNN inference"""
+    if not gnn_session:
+        return 0.0, "gnn_unavailable"
+    
+    start = time.perf_counter()
+    
+    # Prepare inputs
+    inputs = {
+        'x': graph_features,
+        'edge_index': np.random.randint(0, 10, (2, 20), dtype=np.int64),  # Placeholder
+        'batch': np.zeros(graph_features.shape[0], dtype=np.int64)
     }
+    
+    # Run inference
+    outputs = gnn_session.run(None, inputs)
+    scores = outputs[0]
+    
+    latency_us = int((time.perf_counter() - start) * 1_000_000)
+    
+    # Softmax to get probabilities
+    exp_scores = np.exp(scores - np.max(scores))
+    probs = exp_scores / exp_scores.sum()
+    
+    sandwich_prob = probs[0, 1] if len(probs.shape) > 1 else probs[1]
+    
+    return float(sandwich_prob), f"gnn_{latency_us}us"
 
-@app.post("/detect", response_model=DetectionResponse)
-async def detect_mev(request: DetectionRequest):
-    """Single transaction MEV detection endpoint"""
-    start_time = time.perf_counter()
+async def run_transformer_inference(sequence: np.ndarray) -> Tuple[float, str, float]:
+    """Run transformer inference"""
+    if not transformer_session:
+        return 0.0, "normal", 0.5
     
-    # Run detection through ensemble
-    results = {}
-    model_scores = {}
+    start = time.perf_counter()
     
-    # Rule-based detection
-    if 'rule_based' in app.state.models:
-        rule_result = app.state.models['rule_based'].detect_sandwich([request.transaction])
-        results['rule_based'] = rule_result
-        model_scores['rule_based'] = rule_result.confidence
-    
-    # Statistical anomaly detection
-    if 'statistical' in app.state.models:
-        stat_result = app.state.models['statistical'].detect_anomaly(request.transaction)
-        results['statistical'] = stat_result
-        model_scores['statistical'] = stat_result.confidence
-    
-    # ONNX ensemble (fastest for production)
-    if 'onnx_ensemble' in app.state.models:
-        features = extract_features_vector(request.features)
-        onnx_result = app.state.models['onnx_ensemble'].predict(features)
-        results['onnx'] = onnx_result
-        model_scores['onnx'] = onnx_result.confidence
-    
-    # Ensemble voting
-    ensemble_result = ensemble_vote(results)
-    
-    # Calculate latency
-    latency_ms = (time.perf_counter() - start_time) * 1000
-    latency_histogram.observe(latency_ms)
-    
-    # Track detection
-    if ensemble_result.is_mev:
-        detection_counter.labels(mev_type=ensemble_result.mev_type).inc()
-    
-    # Store in ClickHouse
-    if app.state.clickhouse and ensemble_result.is_mev:
-        await store_detection(app.state.clickhouse, ensemble_result, request)
-    
-    # Add to decision chain
-    app.state.decision_chain.append({
-        'signature': request.features.signature,
-        'decision_dna': ensemble_result.decision_dna,
-        'timestamp': datetime.utcnow().isoformat()
-    })
-    
-    return DetectionResponse(
-        is_mev=ensemble_result.is_mev,
-        mev_type=ensemble_result.mev_type,
-        confidence=ensemble_result.confidence,
-        attacker_address=ensemble_result.attacker_address,
-        victim_address=ensemble_result.victim_address,
-        profit_estimate=ensemble_result.profit_estimate,
-        feature_importance=ensemble_result.feature_importance,
-        decision_dna=ensemble_result.decision_dna,
-        inference_latency_ms=latency_ms,
-        model_scores=model_scores
-    )
-
-@app.post("/detect/batch")
-async def detect_batch(request: BatchDetectionRequest):
-    """Batch detection endpoint for high throughput"""
-    start_time = time.perf_counter()
-    
-    # Process in parallel
-    tasks = []
-    for tx_request in request.transactions:
-        task = detect_mev(tx_request)
-        tasks.append(task)
-    
-    results = await asyncio.gather(*tasks)
-    
-    latency_ms = (time.perf_counter() - start_time) * 1000
-    
-    return {
-        "results": results,
-        "batch_size": len(request.transactions),
-        "total_latency_ms": latency_ms,
-        "avg_latency_ms": latency_ms / len(request.transactions)
+    # Prepare inputs
+    inputs = {
+        'sequence': sequence.reshape(1, -1),
+        'mask': None
     }
+    
+    # Run inference
+    outputs = transformer_session.run(None, inputs)
+    pattern_logits = outputs[0]
+    confidence = outputs[1]
+    
+    latency_us = int((time.perf_counter() - start) * 1_000_000)
+    
+    # Get pattern type
+    pattern_types = ['normal', 'sandwich', 'backrun', 'liquidation', 'arbitrage']
+    pattern_idx = np.argmax(pattern_logits[0])
+    pattern_type = pattern_types[min(pattern_idx, len(pattern_types)-1)]
+    
+    # Get sandwich probability
+    exp_logits = np.exp(pattern_logits[0][:2] - np.max(pattern_logits[0][:2]))
+    sandwich_prob = exp_logits[1] / exp_logits.sum()
+    
+    return float(sandwich_prob), pattern_type, float(confidence[0])
 
-@app.post("/detect/priority")
-async def detect_priority(request: DetectionRequest):
-    """Priority detection for monitored addresses"""
-    # Fast path for priority addresses
-    request.priority = True
-    result = await detect_mev(request)
+async def detect_sandwich_heuristic(tx: TransactionData, window: List[TransactionData]) -> Dict:
+    """Heuristic sandwich detection"""
+    evidence = {
+        'bracket': False,
+        'slip_rebound': False,
+        'timing': False,
+        'pool_match': False
+    }
     
-    # Alert if high confidence MEV
-    if result.is_mev and result.confidence > 0.9:
-        await send_alert(result, request.features.account_keys[0])
+    # Check for bracket pattern
+    if len(window) >= 3:
+        # Look for same pool in transactions before and after
+        for i, w_tx in enumerate(window):
+            if w_tx.sig == tx.sig:
+                # Check transactions before and after
+                if i > 0 and i < len(window) - 1:
+                    before = window[i-1]
+                    after = window[i+1]
+                    
+                    # Check if same attacker
+                    if before.payer == after.payer and before.payer != tx.payer:
+                        evidence['bracket'] = True
+                        
+                        # Check pool overlap
+                        pools_before = set(before.pool_keys)
+                        pools_after = set(after.pool_keys)
+                        pools_victim = set(tx.pool_keys)
+                        
+                        if pools_before & pools_victim and pools_after & pools_victim:
+                            evidence['pool_match'] = True
+                        
+                        # Check timing
+                        if before.slot == tx.slot and after.slot == tx.slot:
+                            evidence['timing'] = True
+                        
+                        # Check for price reversion
+                        if before.amount_out > 0 and after.amount_in > 0:
+                            if abs(before.amount_out - after.amount_in) / before.amount_out < 0.1:
+                                evidence['slip_rebound'] = True
     
-    return result
+    return evidence
 
-@app.get("/entity/{address}", response_model=EntityProfileResponse)
-async def get_entity_profile(address: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None):
-    """Get behavioral profile for an entity"""
+@app.post("/infer", response_model=List[DetectionResult])
+async def detect_mev(request: DetectionRequest, background_tasks: BackgroundTasks):
+    """
+    Main detection endpoint
+    Returns detection results with evidence and DNA
+    """
+    results = []
     
-    # Check cache first
-    if app.state.redis:
-        cached = await app.state.redis.get(f"profile:{address}")
-        if cached:
-            return json.loads(cached)
-    
-    # Fetch transactions from ClickHouse
-    if app.state.clickhouse:
-        transactions = await fetch_entity_transactions(
-            app.state.clickhouse, 
-            address, 
-            start_date, 
-            end_date
+    for tx in request.transactions:
+        start_time = time.perf_counter()
+        
+        # Run detections in parallel
+        tasks = []
+        
+        # Prepare features
+        graph_features = np.random.randn(10, 128).astype(np.float32)  # Placeholder
+        sequence = await encode_instruction_sequence(tx.programs, tx.ix_kinds)
+        
+        # Run models
+        gnn_task = asyncio.create_task(run_gnn_inference(graph_features))
+        transformer_task = asyncio.create_task(run_transformer_inference(sequence))
+        heuristic_task = asyncio.create_task(
+            detect_sandwich_heuristic(tx, request.transactions)
         )
-    else:
-        transactions = []
-    
-    # Generate profile
-    spectrum_report = app.state.spectrum_analyzer.generate_spectrum_report(
-        address, 
-        transactions
-    )
-    
-    # Cache for 5 minutes
-    if app.state.redis:
-        await app.state.redis.setex(
-            f"profile:{address}",
-            300,
-            json.dumps(spectrum_report)
-        )
-    
-    # Update gauge
-    entity_profiles_gauge.inc()
-    
-    return EntityProfileResponse(
-        address=address,
-        classification=spectrum_report['classification'],
-        risk_level=spectrum_report['risk_level'],
-        sophistication_score=spectrum_report['sophistication_score'],
-        behavioral_metrics=spectrum_report['behavioral_metrics'],
-        financial_metrics=spectrum_report['financial_metrics'],
-        operational_metrics=spectrum_report['operational_metrics'],
-        advanced_metrics=spectrum_report['advanced_metrics'],
-        profile_dna=spectrum_report['profile_dna'],
-        cluster_id=spectrum_report.get('cluster_id')
-    )
-
-@app.get("/clusters")
-async def get_entity_clusters():
-    """Get clustered entities based on behavioral similarity"""
-    
-    # Fetch all profiles
-    if app.state.clickhouse:
-        query = """
-        SELECT DISTINCT entity_address 
-        FROM entity_profiles 
-        WHERE profile_date >= today() - 7
-        """
-        addresses = app.state.clickhouse.execute(query)
         
-        profiles = []
-        for (addr,) in addresses:
-            tx = await fetch_entity_transactions(app.state.clickhouse, addr)
-            profile = app.state.behavioral_analyzer.analyze_entity(addr, tx)
-            profiles.append(profile)
+        # Wait for all
+        gnn_score, gnn_info = await gnn_task
+        transformer_score, pattern_type, confidence = await transformer_task
+        heuristic_evidence = await heuristic_task
         
-        # Cluster entities
-        clusters = app.state.behavioral_analyzer.cluster_entities(profiles)
+        # Ensemble scoring
+        ensemble_score = (gnn_score * 0.4 + transformer_score * 0.4 + 
+                         (0.2 if heuristic_evidence['bracket'] else 0))
         
-        # Find coordinated actors
-        coordinated = app.state.behavioral_analyzer.identify_coordinated_actors(profiles)
+        is_sandwich = ensemble_score > 0.5
         
-        return {
-            "clusters": clusters,
-            "coordinated_pairs": coordinated,
-            "total_entities": len(profiles)
+        # Generate Decision DNA
+        dna_data = {
+            'slot': tx.slot,
+            'sig': tx.sig,
+            'models': {
+                'gnn': gnn_score,
+                'transformer': transformer_score,
+                'ensemble': ensemble_score
+            },
+            'evidence': heuristic_evidence,
+            'timestamp': datetime.utcnow().isoformat()
         }
-    
-    return {"error": "ClickHouse not available"}
-
-@app.get("/stats")
-async def get_stats():
-    """Get detection statistics"""
-    stats = {
-        "total_detections": sum(detection_counter._metrics.values()),
-        "decision_chain_length": len(app.state.decision_chain),
-        "models_available": list(app.state.models.keys()),
-        "timestamp": datetime.utcnow().isoformat()
-    }
-    
-    # Add ClickHouse stats if available
-    if app.state.clickhouse:
-        ch_stats = app.state.clickhouse.execute("""
-        SELECT 
-            count(*) as total_transactions,
-            countIf(is_mev_candidate = 1) as mev_candidates,
-            avg(inference_latency_ms) as avg_latency
-        FROM model_scores
-        WHERE score_timestamp >= now() - INTERVAL 1 HOUR
-        """)
         
-        if ch_stats:
-            stats['clickhouse'] = {
-                'recent_transactions': ch_stats[0][0],
-                'mev_candidates': ch_stats[0][1],
-                'avg_latency_ms': ch_stats[0][2]
-            }
-    
-    return stats
-
-@app.get("/merkle")
-async def get_merkle_root():
-    """Get current Merkle root of decision chain"""
-    if not app.state.decision_chain:
-        return {"merkle_root": None}
-    
-    # Build Merkle tree
-    leaves = [
-        hashlib.sha256(json.dumps(decision).encode()).digest()
-        for decision in app.state.decision_chain
-    ]
-    
-    level = leaves
-    while len(level) > 1:
-        next_level = []
-        for i in range(0, len(level), 2):
-            left = level[i]
-            right = level[i + 1] if i + 1 < len(level) else level[i]
-            combined = left + right
-            next_level.append(hashlib.sha256(combined).digest())
-        level = next_level
-    
-    merkle_root = level[0].hex()
-    
-    return {
-        "merkle_root": merkle_root,
-        "chain_length": len(app.state.decision_chain),
-        "timestamp": datetime.utcnow().isoformat()
-    }
-
-@app.get("/metrics")
-async def get_metrics():
-    """Prometheus metrics endpoint"""
-    return generate_latest()
-
-# Helper functions
-def extract_features_vector(features: TransactionFeatures) -> np.ndarray:
-    """Extract feature vector from transaction features"""
-    vector = np.zeros(128)  # Fixed size feature vector
-    
-    # Basic features
-    vector[0] = features.slot
-    vector[1] = features.fee
-    vector[2] = features.compute_units
-    vector[3] = features.priority_fee
-    vector[4] = features.instruction_count
-    vector[5] = len(features.account_keys)
-    vector[6] = len(features.program_ids)
-    vector[7] = len(features.token_transfers)
-    
-    # Program flags (one-hot encoding for known programs)
-    known_programs = [
-        '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',  # Raydium V4
-        'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK',  # Raydium CPMM
-        '9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP',  # Orca
-        '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P',  # Pump.fun
-    ]
-    
-    for i, program in enumerate(known_programs):
-        if program in features.program_ids:
-            vector[10 + i] = 1
-    
-    # Normalize
-    vector = vector / (np.linalg.norm(vector) + 1e-10)
-    
-    return vector
-
-def ensemble_vote(results: Dict[str, DetectionResult]) -> DetectionResult:
-    """Ensemble voting from multiple models"""
-    if not results:
-        return DetectionResult(
-            is_mev=False,
-            mev_type=None,
-            confidence=0.0,
-            attacker_address=None,
-            victim_address=None,
-            profit_estimate=None,
-            feature_importance={},
-            decision_dna=hashlib.sha256(b"no_results").hexdigest(),
-            inference_latency_ms=0
+        dna_fingerprint = generate_dna_fingerprint(dna_data) if request.include_dna else None
+        
+        # Sign decision
+        decision = {
+            'is_sandwich': is_sandwich,
+            'score': ensemble_score,
+            'pattern': pattern_type
+        }
+        signature = sign_decision(dna_fingerprint, decision) if request.include_dna else None
+        
+        # Calculate latency
+        latency_us = int((time.perf_counter() - start_time) * 1_000_000)
+        
+        # Store result
+        result = DetectionResult(
+            slot=tx.slot,
+            sig=tx.sig,
+            is_sandwich=is_sandwich,
+            sandwich_score=ensemble_score,
+            pattern_type=pattern_type,
+            confidence=confidence if request.include_confidence else 0.5,
+            evidence={
+                'heuristic': heuristic_evidence,
+                'gnn_score': gnn_score,
+                'transformer_score': transformer_score,
+                'models_info': {
+                    'gnn': gnn_info,
+                    'latency': f"{latency_us}us"
+                }
+            },
+            dna_fingerprint=dna_fingerprint,
+            signature=signature,
+            latency_us=latency_us
         )
-    
-    # Weighted voting
-    weights = {
-        'rule_based': 0.3,
-        'statistical': 0.2,
-        'onnx': 0.5
-    }
-    
-    total_confidence = 0
-    mev_votes = defaultdict(float)
-    
-    for model_name, result in results.items():
-        weight = weights.get(model_name, 0.25)
-        total_confidence += result.confidence * weight
         
-        if result.is_mev and result.mev_type:
-            mev_votes[result.mev_type] += weight
+        results.append(result)
+        
+        # Store in ClickHouse asynchronously
+        if ch_client and is_sandwich:
+            background_tasks.add_task(
+                store_detection,
+                tx,
+                result
+            )
     
-    # Determine final decision
-    is_mev = total_confidence > 0.5
-    mev_type = max(mev_votes, key=mev_votes.get) if mev_votes else None
-    
-    # Combine feature importance
-    combined_importance = {}
-    for result in results.values():
-        for feature, importance in result.feature_importance.items():
-            if feature not in combined_importance:
-                combined_importance[feature] = 0
-            combined_importance[feature] += importance
-    
-    # Generate ensemble DNA
-    ensemble_data = {
-        'models': list(results.keys()),
-        'confidence': total_confidence,
-        'mev_type': mev_type
-    }
-    decision_dna = hashlib.sha256(json.dumps(ensemble_data).encode()).hexdigest()
-    
-    return DetectionResult(
-        is_mev=is_mev,
-        mev_type=mev_type,
-        confidence=total_confidence,
-        attacker_address=None,  # Would need consensus
-        victim_address=None,
-        profit_estimate=None,
-        feature_importance=combined_importance,
-        decision_dna=decision_dna,
-        inference_latency_ms=0
-    )
+    return results
 
-async def store_detection(client, result: DetectionResult, request: DetectionRequest):
+async def store_detection(tx: TransactionData, result: DetectionResult):
     """Store detection result in ClickHouse"""
     try:
         query = """
-        INSERT INTO sandwich_candidates 
-        (detection_id, detection_timestamp, confidence_score, victim_signature, 
-         victim_slot, attacker_address, victim_address, decision_dna, feature_hash)
-        VALUES
+        INSERT INTO ch.candidates (
+            detection_ts, slot, victim_sig, attacker_a_sig, attacker_b_sig,
+            attacker_addr, victim_addr, pool, d_ms, d_slots,
+            slippage_victim, price_reversion, evidence, score_rule,
+            score_gnn, score_transformer, ensemble_score,
+            dna_fingerprint, model_version
+        ) VALUES
         """
         
-        data = (
-            hashlib.sha256(result.decision_dna.encode()).hexdigest()[:16],
-            datetime.utcnow(),
-            result.confidence,
-            request.features.signature,
-            request.features.slot,
-            result.attacker_address or '',
-            result.victim_address or '',
-            result.decision_dna,
-            request.features.feature_hash or ''
+        # Simplified insert - would need full data in production
+        ch_client.execute(query, [{
+            'detection_ts': datetime.utcnow(),
+            'slot': tx.slot,
+            'victim_sig': tx.sig,
+            'attacker_a_sig': '',
+            'attacker_b_sig': '',
+            'attacker_addr': '',
+            'victim_addr': tx.payer,
+            'pool': tx.pool_keys[0] if tx.pool_keys else '',
+            'd_ms': 0,
+            'd_slots': 0,
+            'slippage_victim': 0,
+            'price_reversion': 0,
+            'evidence': 1,
+            'score_rule': 0,
+            'score_gnn': result.evidence['gnn_score'],
+            'score_transformer': result.evidence['transformer_score'],
+            'ensemble_score': result.sandwich_score,
+            'dna_fingerprint': result.dna_fingerprint or '',
+            'model_version': 'v1.0.0'
+        }])
+    except Exception as e:
+        logger.error(f"Failed to store detection: {e}")
+
+@app.get("/profile/{entity_addr}", response_model=BehaviorProfile)
+async def get_entity_profile(entity_addr: str):
+    """Get behavioral profile for an entity"""
+    
+    if not ch_client:
+        raise HTTPException(status_code=503, detail="ClickHouse unavailable")
+    
+    # Query entity profile
+    query = f"""
+    SELECT 
+        attack_style_surgical,
+        attack_style_shotgun,
+        victim_retail_ratio,
+        victim_whale_ratio,
+        risk_appetite,
+        fee_aggressiveness,
+        avg_response_ms,
+        landing_rate,
+        total_extraction_sol,
+        linked_wallets,
+        cluster_id
+    FROM ch.entity_profiles
+    WHERE entity_addr = '{entity_addr}'
+    ORDER BY profile_date DESC
+    LIMIT 1
+    """
+    
+    result = ch_client.execute(query)
+    
+    if not result:
+        # Generate profile on the fly
+        profile = await generate_entity_profile(entity_addr)
+    else:
+        row = result[0]
+        
+        # Determine attack style
+        if row[0] > 0.7:
+            attack_style = 'surgical'
+        elif row[1] > 0.7:
+            attack_style = 'shotgun'
+        else:
+            attack_style = 'adaptive'
+        
+        # Determine victim selection
+        if row[2] > 0.7:
+            victim_selection = 'retail'
+        elif row[3] > 0.7:
+            victim_selection = 'whale'
+        else:
+            victim_selection = 'mixed'
+        
+        profile = BehaviorProfile(
+            entity_addr=entity_addr,
+            attack_style=attack_style,
+            victim_selection=victim_selection,
+            risk_appetite=row[4],
+            fee_aggressiveness=row[5],
+            avg_response_ms=row[6],
+            landing_rate=row[7],
+            total_extraction_sol=row[8],
+            linked_wallets=row[9] or [],
+            cluster_id=row[10]
         )
-        
-        client.execute(query, [data])
-    except Exception as e:
-        print(f"Failed to store detection: {e}")
+    
+    return profile
 
-async def fetch_entity_transactions(client, address: str, start_date=None, end_date=None):
-    """Fetch entity transactions from ClickHouse"""
-    try:
-        where_clause = f"account_keys[1] = '{address}'"
-        
-        if start_date:
-            where_clause += f" AND block_time >= '{start_date}'"
-        if end_date:
-            where_clause += f" AND block_time <= '{end_date}'"
-        
-        query = f"""
-        SELECT 
-            signature, slot, block_time, fee, compute_units_consumed,
-            program_ids, instruction_count, priority_fee_lamports
-        FROM solana_transactions
-        WHERE {where_clause}
-        ORDER BY block_time DESC
-        LIMIT 1000
-        """
-        
-        results = client.execute(query)
-        
-        transactions = []
-        for row in results:
-            transactions.append({
-                'signature': row[0],
-                'slot': row[1],
-                'block_time': row[2].timestamp(),
-                'fee': row[3],
-                'compute_units': row[4],
-                'program_ids': row[5],
-                'instruction_count': row[6],
-                'priority_fee': row[7]
-            })
-        
-        return transactions
-    except Exception as e:
-        print(f"Failed to fetch transactions: {e}")
-        return []
+async def generate_entity_profile(entity_addr: str) -> BehaviorProfile:
+    """Generate behavioral profile from transaction history"""
+    
+    # Placeholder implementation
+    return BehaviorProfile(
+        entity_addr=entity_addr,
+        attack_style='unknown',
+        victim_selection='unknown',
+        risk_appetite=0.5,
+        fee_aggressiveness=0.5,
+        avg_response_ms=100,
+        landing_rate=0.5,
+        total_extraction_sol=0,
+        linked_wallets=[],
+        cluster_id=None
+    )
 
-async def send_alert(result: DetectionResponse, address: str):
-    """Send alert for high-confidence detections"""
-    alert = {
-        "type": "HIGH_CONFIDENCE_MEV",
-        "address": address,
-        "mev_type": result.mev_type,
-        "confidence": result.confidence,
-        "timestamp": datetime.utcnow().isoformat()
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    status = {
+        'status': 'healthy',
+        'models': {
+            'gnn': gnn_session is not None,
+            'transformer': transformer_session is not None
+        },
+        'services': {
+            'redis': redis_client is not None,
+            'clickhouse': ch_client is not None
+        },
+        'timestamp': datetime.utcnow().isoformat()
     }
+    return JSONResponse(content=status)
+
+@app.get("/metrics")
+async def get_metrics():
+    """Get detection metrics"""
+    if not ch_client:
+        raise HTTPException(status_code=503, detail="ClickHouse unavailable")
     
-    print(f"🚨 ALERT: {alert}")
+    query = """
+    SELECT 
+        model_name,
+        avg(roc_auc) as avg_auc,
+        avg(precision) as avg_precision,
+        avg(recall) as avg_recall,
+        avg(false_positive_rate) as avg_fpr,
+        avg(inference_p50_us) as p50_latency,
+        avg(inference_p99_us) as p99_latency,
+        sum(predictions_count) as total_predictions
+    FROM ch.model_metrics
+    WHERE ts >= now() - INTERVAL 1 DAY
+    GROUP BY model_name
+    """
     
-    # In production, send to monitoring system
-    # await send_to_pagerduty(alert)
-    # await send_to_slack(alert)
+    results = ch_client.execute(query)
+    
+    metrics = {}
+    for row in results:
+        metrics[row[0]] = {
+            'auc': row[1],
+            'precision': row[2],
+            'recall': row[3],
+            'fpr': row[4],
+            'p50_latency_us': row[5],
+            'p99_latency_us': row[6],
+            'total_predictions': row[7]
+        }
+    
+    return metrics
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8800, workers=4)

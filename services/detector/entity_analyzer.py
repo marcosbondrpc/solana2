@@ -1,648 +1,590 @@
+#!/usr/bin/env python3
 """
-Elite Entity Behavioral Analysis System
-Profiles MEV actors with sophisticated behavioral metrics
+Entity Behavioral Analyzer
+DETECTION-ONLY: Pure behavioral profiling and pattern recognition
+Tracks attack styles, victim selection, risk profiles
 """
 
 import numpy as np
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
+import pandas as pd
+from typing import Dict, List, Tuple, Optional
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-import hashlib
-import json
-from collections import defaultdict, Counter
-from scipy import stats
+import clickhouse_driver
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-import pandas as pd
+import networkx as nx
+import logging
+import hashlib
+import json
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @dataclass
-class EntityProfile:
-    """Comprehensive behavioral profile for MEV entities"""
-    address: str
-    profile_date: datetime
+class EntityMetrics:
+    """Behavioral metrics for an entity"""
+    entity_addr: str
     
-    # Activity metrics
-    total_transactions: int = 0
-    mev_transactions: int = 0
-    success_rate: float = 0.0
+    # Attack patterns
+    total_attacks: int = 0
+    successful_attacks: int = 0
+    failed_attacks: int = 0
     
-    # Financial metrics
-    total_volume: float = 0.0
-    total_profit: float = 0.0
-    average_profit: float = 0.0
-    max_single_profit: float = 0.0
+    # Victim selection
+    retail_victims: int = 0  # < 100 SOL wallets
+    whale_victims: int = 0   # > 10000 SOL wallets
+    bot_victims: int = 0     # Known bots/arbitrageurs
     
-    # Behavioral patterns
-    attack_style: str = "unknown"  # surgical, shotgun, mixed
-    victim_selection_pattern: str = "unknown"  # opportunistic, targeted, random
-    risk_appetite: float = 0.0  # 0-1 scale
-    fee_posture: str = "unknown"  # aggressive, moderate, conservative
+    # Attack style
+    surgical_score: float = 0.0  # Precision targeting
+    shotgun_score: float = 0.0   # Volume spray
+    adaptive_score: float = 0.0  # Pattern changes
     
-    # Temporal patterns
-    active_hours: List[int] = field(default_factory=list)
-    uptime_percentage: float = 0.0
-    avg_txns_per_hour: float = 0.0
-    burst_pattern: str = "unknown"  # continuous, burst, irregular
+    # Risk profile
+    max_position_sol: float = 0.0
+    avg_position_sol: float = 0.0
+    loss_tolerance: float = 0.0
     
-    # Pool preferences
-    preferred_pools: List[str] = field(default_factory=list)
-    preferred_tokens: List[str] = field(default_factory=list)
+    # Fee behavior
+    avg_priority_fee: float = 0.0
+    max_priority_fee: float = 0.0
+    fee_escalation_rate: float = 0.0
     
-    # Advanced metrics
-    slippage_imposed_avg: float = 0.0
-    sandwich_success_rate: float = 0.0
-    arbitrage_path_complexity: float = 0.0
+    # Timing patterns
+    avg_response_ms: float = 0.0
+    p50_response_ms: float = 0.0
+    p99_response_ms: float = 0.0
     
-    # Clustering
-    behavioral_embedding: np.ndarray = field(default_factory=lambda: np.zeros(64))
-    cluster_id: Optional[int] = None
+    # Economic impact
+    total_extraction_sol: float = 0.0
+    total_fees_paid_sol: float = 0.0
+    profit_margin: float = 0.0
     
-    # Decision DNA
-    profile_dna: str = ""
-
+    # Network analysis
+    unique_pools: int = 0
+    unique_venues: int = 0
+    unique_victims: int = 0
+    
+    # Uptime patterns
+    active_hours: List[int] = None
+    active_days: List[int] = None
+    uptime_ratio: float = 0.0
 
 class BehavioralAnalyzer:
-    """Advanced behavioral analysis for MEV entities"""
+    """Analyze entity behavioral patterns"""
     
-    # Target addresses for special monitoring
-    PRIORITY_ADDRESSES = {
-        'B91piBSfCBRs5rUxCMRdJEGv7tNEnFxweWcdQJHJoFpi': 'high_volume_arbitrageur',
-        '6gAnjderE13TGGFeqdPVQ438jp2FPVeyXAszxKu9y338': 'sophisticated_sandwicher',
-        'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C': 'raydium_pool',
-        'E6YoRP3adE5XYneSseLee15wJshDxCsmyD2WtLvAmfLi': 'flash_loan_expert',
-        'pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA': 'pumpswap_specialist'
-    }
-    
-    def __init__(self):
+    def __init__(self, ch_host='localhost', ch_port=9000):
+        self.ch = clickhouse_driver.Client(
+            host=ch_host,
+            port=ch_port,
+            settings={'use_numpy': True}
+        )
         self.entity_cache = {}
-        self.transaction_history = defaultdict(list)
-        self.clustering_model = DBSCAN(eps=0.3, min_samples=5)
-        self.scaler = StandardScaler()
         
-    def analyze_entity(self, address: str, transactions: List[Dict]) -> EntityProfile:
-        """Generate comprehensive behavioral profile for an entity"""
+    def analyze_entity(self, entity_addr: str, lookback_days: int = 30) -> EntityMetrics:
+        """Comprehensive behavioral analysis of an entity"""
         
-        profile = EntityProfile(
-            address=address,
-            profile_date=datetime.utcnow()
-        )
+        metrics = EntityMetrics(entity_addr=entity_addr)
         
-        if not transactions:
-            return profile
+        # Get attack history
+        attacks = self._get_attack_history(entity_addr, lookback_days)
+        if not attacks:
+            return metrics
         
-        # Sort transactions by timestamp
-        transactions = sorted(transactions, key=lambda x: x.get('block_time', 0))
+        # Basic counts
+        metrics.total_attacks = len(attacks)
+        metrics.successful_attacks = sum(1 for a in attacks if a['landed'])
+        metrics.failed_attacks = metrics.total_attacks - metrics.successful_attacks
         
-        # Basic metrics
-        profile.total_transactions = len(transactions)
-        profile.mev_transactions = sum(1 for tx in transactions if tx.get('is_mev', False))
-        profile.success_rate = sum(1 for tx in transactions if tx.get('success', False)) / len(transactions)
+        # Victim analysis
+        victim_profiles = self._analyze_victims(attacks)
+        metrics.retail_victims = victim_profiles['retail']
+        metrics.whale_victims = victim_profiles['whale']
+        metrics.bot_victims = victim_profiles['bot']
         
-        # Financial metrics
-        profile.total_volume = sum(tx.get('amount', 0) for tx in transactions)
-        profits = [tx.get('profit', 0) for tx in transactions if tx.get('profit', 0) > 0]
-        if profits:
-            profile.total_profit = sum(profits)
-            profile.average_profit = np.mean(profits)
-            profile.max_single_profit = max(profits)
+        # Attack style scoring
+        style_scores = self._calculate_attack_style(attacks)
+        metrics.surgical_score = style_scores['surgical']
+        metrics.shotgun_score = style_scores['shotgun']
+        metrics.adaptive_score = style_scores['adaptive']
         
-        # Attack style classification
-        profile.attack_style = self._classify_attack_style(transactions)
+        # Risk analysis
+        risk_profile = self._analyze_risk_profile(attacks)
+        metrics.max_position_sol = risk_profile['max_position']
+        metrics.avg_position_sol = risk_profile['avg_position']
+        metrics.loss_tolerance = risk_profile['loss_tolerance']
         
-        # Victim selection pattern
-        profile.victim_selection_pattern = self._analyze_victim_selection(transactions)
+        # Fee behavior
+        fee_analysis = self._analyze_fee_behavior(attacks)
+        metrics.avg_priority_fee = fee_analysis['avg_priority']
+        metrics.max_priority_fee = fee_analysis['max_priority']
+        metrics.fee_escalation_rate = fee_analysis['escalation_rate']
         
-        # Risk appetite
-        profile.risk_appetite = self._calculate_risk_appetite(transactions)
+        # Timing patterns
+        timing = self._analyze_timing_patterns(attacks)
+        metrics.avg_response_ms = timing['avg_ms']
+        metrics.p50_response_ms = timing['p50_ms']
+        metrics.p99_response_ms = timing['p99_ms']
         
-        # Fee posture
-        profile.fee_posture = self._classify_fee_posture(transactions)
+        # Economic impact
+        economics = self._calculate_economics(attacks)
+        metrics.total_extraction_sol = economics['total_extraction']
+        metrics.total_fees_paid_sol = economics['total_fees']
+        metrics.profit_margin = economics['profit_margin']
         
-        # Temporal patterns
-        profile.active_hours = self._extract_active_hours(transactions)
-        profile.uptime_percentage = self._calculate_uptime(transactions)
-        profile.avg_txns_per_hour = self._calculate_transaction_rate(transactions)
-        profile.burst_pattern = self._classify_burst_pattern(transactions)
+        # Network diversity
+        metrics.unique_pools = len(set(a['pool'] for a in attacks if a['pool']))
+        metrics.unique_venues = len(set(a['venue'] for a in attacks if a['venue']))
+        metrics.unique_victims = len(set(a['victim'] for a in attacks if a['victim']))
         
-        # Pool and token preferences
-        profile.preferred_pools = self._extract_preferred_pools(transactions)
-        profile.preferred_tokens = self._extract_preferred_tokens(transactions)
+        # Uptime patterns
+        uptime = self._analyze_uptime_patterns(attacks)
+        metrics.active_hours = uptime['active_hours']
+        metrics.active_days = uptime['active_days']
+        metrics.uptime_ratio = uptime['ratio']
         
-        # Advanced metrics
-        profile.slippage_imposed_avg = self._calculate_avg_slippage(transactions)
-        profile.sandwich_success_rate = self._calculate_sandwich_success(transactions)
-        profile.arbitrage_path_complexity = self._calculate_path_complexity(transactions)
-        
-        # Generate behavioral embedding
-        profile.behavioral_embedding = self._generate_embedding(profile)
-        
-        # Generate profile DNA
-        profile.profile_dna = self._generate_profile_dna(profile)
-        
-        # Cache the profile
-        self.entity_cache[address] = profile
-        
-        return profile
+        return metrics
     
-    def _classify_attack_style(self, transactions: List[Dict]) -> str:
-        """Classify entity's attack style based on transaction patterns"""
+    def _get_attack_history(self, entity_addr: str, lookback_days: int) -> List[Dict]:
+        """Fetch attack history from ClickHouse"""
         
-        if not transactions:
-            return "unknown"
+        query = f"""
+        SELECT 
+            c.slot,
+            c.victim_sig,
+            c.victim_addr,
+            c.pool,
+            c.d_ms,
+            c.slippage_victim,
+            c.attacker_profit_sol,
+            c.fee_burn_sol,
+            c.detection_ts,
+            r.venue,
+            r.priority_fee,
+            r.landing_status = 'landed' as landed,
+            r.amount_in,
+            r.amount_out
+        FROM ch.candidates c
+        LEFT JOIN ch.raw_tx r ON c.attacker_a_sig = r.sig
+        WHERE c.attacker_addr = '{entity_addr}'
+          AND c.detection_ts >= now() - INTERVAL {lookback_days} DAY
+        ORDER BY c.slot
+        """
         
-        # Analyze transaction patterns
-        mev_txs = [tx for tx in transactions if tx.get('is_mev', False)]
+        results = self.ch.execute(query)
         
-        if not mev_txs:
-            return "passive"
+        attacks = []
+        for row in results:
+            attacks.append({
+                'slot': row[0],
+                'victim_sig': row[1],
+                'victim': row[2],
+                'pool': row[3],
+                'response_ms': row[4],
+                'slippage': row[5],
+                'profit': row[6],
+                'fees': row[7],
+                'timestamp': row[8],
+                'venue': row[9],
+                'priority_fee': row[10],
+                'landed': row[11],
+                'amount_in': row[12],
+                'amount_out': row[13]
+            })
         
-        # Calculate metrics
-        time_diffs = []
-        for i in range(1, len(mev_txs)):
-            diff = mev_txs[i].get('block_time', 0) - mev_txs[i-1].get('block_time', 0)
-            time_diffs.append(diff)
-        
-        if not time_diffs:
-            return "single_shot"
-        
-        avg_interval = np.mean(time_diffs)
-        std_interval = np.std(time_diffs)
-        
-        # Number of unique pools targeted
-        unique_pools = len(set(tx.get('pool', '') for tx in mev_txs))
-        
-        # Classification logic
-        if std_interval < avg_interval * 0.3 and unique_pools < 3:
-            return "surgical"  # Focused, consistent attacks on specific pools
-        elif unique_pools > 10 and len(mev_txs) > 100:
-            return "shotgun"  # Wide-ranging, high-volume attacks
-        else:
-            return "mixed"  # Combination of strategies
+        return attacks
     
-    def _analyze_victim_selection(self, transactions: List[Dict]) -> str:
-        """Analyze how entity selects victims"""
+    def _analyze_victims(self, attacks: List[Dict]) -> Dict[str, int]:
+        """Classify victim types"""
         
-        sandwich_txs = [tx for tx in transactions if tx.get('mev_type') == 'sandwich']
+        victims = {'retail': 0, 'whale': 0, 'bot': 0}
         
-        if not sandwich_txs:
-            return "none"
-        
-        # Analyze victim characteristics
-        victim_amounts = [tx.get('victim_amount', 0) for tx in sandwich_txs]
-        
-        if not victim_amounts:
-            return "unknown"
-        
-        avg_victim_amount = np.mean(victim_amounts)
-        std_victim_amount = np.std(victim_amounts)
-        
-        # Check for patterns
-        if std_victim_amount < avg_victim_amount * 0.2:
-            return "targeted"  # Consistent victim profile
-        elif avg_victim_amount > 10000:
-            return "whale_hunter"  # Targets large transactions
-        else:
-            return "opportunistic"  # Takes any opportunity
-    
-    def _calculate_risk_appetite(self, transactions: List[Dict]) -> float:
-        """Calculate risk appetite score (0-1)"""
-        
-        if not transactions:
-            return 0.0
-        
-        # Factors for risk appetite
-        failed_txs = sum(1 for tx in transactions if not tx.get('success', False))
-        failure_rate = failed_txs / len(transactions)
-        
-        # Average priority fee as percentage of transaction
-        priority_fees = [tx.get('priority_fee', 0) / max(tx.get('amount', 1), 1) 
-                        for tx in transactions]
-        avg_priority_ratio = np.mean(priority_fees) if priority_fees else 0
-        
-        # Complexity of strategies
-        mev_types = set(tx.get('mev_type', 'normal') for tx in transactions)
-        strategy_diversity = len(mev_types) / 5.0  # Normalize by max types
-        
-        # Calculate composite risk score
-        risk_score = (
-            failure_rate * 0.3 +  # Willingness to fail
-            min(avg_priority_ratio * 10, 1.0) * 0.4 +  # Fee aggression
-            strategy_diversity * 0.3  # Strategy complexity
-        )
-        
-        return min(risk_score, 1.0)
-    
-    def _classify_fee_posture(self, transactions: List[Dict]) -> str:
-        """Classify fee payment behavior"""
-        
-        priority_fees = [tx.get('priority_fee', 0) for tx in transactions]
-        
-        if not priority_fees:
-            return "unknown"
-        
-        avg_fee = np.mean(priority_fees)
-        percentile_95 = np.percentile(priority_fees, 95)
-        
-        # Classification thresholds (in lamports)
-        if percentile_95 > 1000000:  # > 0.001 SOL
-            return "aggressive"
-        elif avg_fee > 100000:  # > 0.0001 SOL
-            return "moderate"
-        else:
-            return "conservative"
-    
-    def _extract_active_hours(self, transactions: List[Dict]) -> List[int]:
-        """Extract hours of day when entity is most active"""
-        
-        hours = []
-        for tx in transactions:
-            timestamp = tx.get('block_time', 0)
-            if timestamp:
-                dt = datetime.fromtimestamp(timestamp)
-                hours.append(dt.hour)
-        
-        # Return top 8 most active hours
-        hour_counts = Counter(hours)
-        return [hour for hour, _ in hour_counts.most_common(8)]
-    
-    def _calculate_uptime(self, transactions: List[Dict]) -> float:
-        """Calculate percentage of time entity is active"""
-        
-        if len(transactions) < 2:
-            return 0.0
-        
-        timestamps = sorted([tx.get('block_time', 0) for tx in transactions if tx.get('block_time')])
-        
-        if len(timestamps) < 2:
-            return 0.0
-        
-        total_span = timestamps[-1] - timestamps[0]
-        
-        if total_span == 0:
-            return 100.0
-        
-        # Calculate active periods (within 1 hour windows)
-        active_hours = set()
-        for ts in timestamps:
-            hour_bucket = ts // 3600
-            active_hours.add(hour_bucket)
-        
-        total_hours = total_span / 3600
-        uptime_pct = (len(active_hours) / max(total_hours, 1)) * 100
-        
-        return min(uptime_pct, 100.0)
-    
-    def _calculate_transaction_rate(self, transactions: List[Dict]) -> float:
-        """Calculate average transactions per hour"""
-        
-        if len(transactions) < 2:
-            return 0.0
-        
-        timestamps = sorted([tx.get('block_time', 0) for tx in transactions if tx.get('block_time')])
-        
-        if len(timestamps) < 2:
-            return 0.0
-        
-        total_hours = (timestamps[-1] - timestamps[0]) / 3600
-        
-        if total_hours == 0:
-            return len(transactions)
-        
-        return len(transactions) / total_hours
-    
-    def _classify_burst_pattern(self, transactions: List[Dict]) -> str:
-        """Classify temporal burst patterns"""
-        
-        if len(transactions) < 10:
-            return "insufficient_data"
-        
-        timestamps = sorted([tx.get('block_time', 0) for tx in transactions if tx.get('block_time')])
-        
-        if len(timestamps) < 10:
-            return "insufficient_data"
-        
-        # Calculate inter-transaction times
-        intervals = [timestamps[i+1] - timestamps[i] for i in range(len(timestamps)-1)]
-        
-        avg_interval = np.mean(intervals)
-        std_interval = np.std(intervals)
-        cv = std_interval / avg_interval if avg_interval > 0 else 0
-        
-        # Classify based on coefficient of variation
-        if cv < 0.5:
-            return "continuous"  # Regular, steady activity
-        elif cv > 1.5:
-            return "burst"  # High variability, burst activity
-        else:
-            return "irregular"  # Mixed pattern
-    
-    def _extract_preferred_pools(self, transactions: List[Dict]) -> List[str]:
-        """Extract most frequently used pools"""
-        
-        pools = [tx.get('pool', '') for tx in transactions if tx.get('pool')]
-        pool_counts = Counter(pools)
-        
-        # Return top 5 pools
-        return [pool for pool, _ in pool_counts.most_common(5)]
-    
-    def _extract_preferred_tokens(self, transactions: List[Dict]) -> List[str]:
-        """Extract most frequently traded tokens"""
-        
-        tokens = []
-        for tx in transactions:
-            tokens.extend(tx.get('tokens', []))
-        
-        token_counts = Counter(tokens)
-        
-        # Return top 10 tokens
-        return [token for token, _ in token_counts.most_common(10)]
-    
-    def _calculate_avg_slippage(self, transactions: List[Dict]) -> float:
-        """Calculate average slippage imposed on victims"""
-        
-        slippages = [tx.get('slippage', 0) for tx in transactions 
-                    if tx.get('mev_type') == 'sandwich' and tx.get('slippage')]
-        
-        if not slippages:
-            return 0.0
-        
-        return np.mean(slippages)
-    
-    def _calculate_sandwich_success(self, transactions: List[Dict]) -> float:
-        """Calculate sandwich attack success rate"""
-        
-        sandwich_txs = [tx for tx in transactions if tx.get('mev_type') == 'sandwich']
-        
-        if not sandwich_txs:
-            return 0.0
-        
-        successful = sum(1 for tx in sandwich_txs if tx.get('profit', 0) > 0)
-        
-        return successful / len(sandwich_txs)
-    
-    def _calculate_path_complexity(self, transactions: List[Dict]) -> float:
-        """Calculate average arbitrage path complexity"""
-        
-        arb_txs = [tx for tx in transactions if tx.get('mev_type') == 'arbitrage']
-        
-        if not arb_txs:
-            return 0.0
-        
-        path_lengths = [len(tx.get('path', [])) for tx in arb_txs if tx.get('path')]
-        
-        if not path_lengths:
-            return 0.0
-        
-        return np.mean(path_lengths)
-    
-    def _generate_embedding(self, profile: EntityProfile) -> np.ndarray:
-        """Generate behavioral embedding vector for clustering"""
-        
-        # Create feature vector
-        features = [
-            profile.total_transactions,
-            profile.mev_transactions,
-            profile.success_rate,
-            profile.total_volume,
-            profile.total_profit,
-            profile.average_profit,
-            profile.risk_appetite,
-            len(profile.active_hours),
-            profile.uptime_percentage,
-            profile.avg_txns_per_hour,
-            len(profile.preferred_pools),
-            len(profile.preferred_tokens),
-            profile.slippage_imposed_avg,
-            profile.sandwich_success_rate,
-            profile.arbitrage_path_complexity,
+        for attack in attacks:
+            if not attack['victim']:
+                continue
             
-            # Categorical features as one-hot
-            1 if profile.attack_style == 'surgical' else 0,
-            1 if profile.attack_style == 'shotgun' else 0,
-            1 if profile.victim_selection_pattern == 'targeted' else 0,
-            1 if profile.fee_posture == 'aggressive' else 0,
-            1 if profile.burst_pattern == 'burst' else 0,
-        ]
+            # Get victim balance (would need real balance lookup)
+            balance = self._estimate_victim_balance(attack['victim'])
+            
+            if balance < 100:
+                victims['retail'] += 1
+            elif balance > 10000:
+                victims['whale'] += 1
+            else:
+                # Check if bot (simplified heuristic)
+                if self._is_likely_bot(attack['victim']):
+                    victims['bot'] += 1
+                else:
+                    victims['retail'] += 1
         
-        # Pad or truncate to 64 dimensions
-        embedding = np.zeros(64)
-        embedding[:len(features)] = features
-        
-        return embedding
+        return victims
     
-    def _generate_profile_dna(self, profile: EntityProfile) -> str:
-        """Generate cryptographic DNA for profile"""
+    def _calculate_attack_style(self, attacks: List[Dict]) -> Dict[str, float]:
+        """Calculate attack style scores"""
         
-        profile_dict = {
-            'address': profile.address,
-            'date': profile.profile_date.isoformat(),
-            'transactions': profile.total_transactions,
-            'style': profile.attack_style,
-            'risk': profile.risk_appetite,
-            'embedding': profile.behavioral_embedding.tolist()
+        if not attacks:
+            return {'surgical': 0, 'shotgun': 0, 'adaptive': 0}
+        
+        # Surgical: High success rate, targeted pools, consistent timing
+        success_rate = sum(1 for a in attacks if a['landed']) / len(attacks)
+        pool_concentration = 1 - (len(set(a['pool'] for a in attacks)) / len(attacks))
+        timing_consistency = 1 - (np.std([a['response_ms'] for a in attacks if a['response_ms']]) / 1000)
+        
+        surgical = (success_rate * 0.4 + pool_concentration * 0.3 + 
+                   max(0, timing_consistency) * 0.3)
+        
+        # Shotgun: High volume, diverse targets, lower success
+        volume_score = min(1, len(attacks) / 100)  # Normalize to 100 attacks
+        target_diversity = len(set(a['victim'] for a in attacks)) / len(attacks)
+        
+        shotgun = volume_score * 0.5 + target_diversity * 0.5 - success_rate * 0.2
+        
+        # Adaptive: Pattern changes over time
+        if len(attacks) > 10:
+            # Split into time windows
+            mid = len(attacks) // 2
+            early_pools = set(a['pool'] for a in attacks[:mid])
+            late_pools = set(a['pool'] for a in attacks[mid:])
+            
+            pool_shift = len(early_pools ^ late_pools) / len(early_pools | late_pools)
+            
+            early_fees = np.mean([a['priority_fee'] for a in attacks[:mid] if a['priority_fee']])
+            late_fees = np.mean([a['priority_fee'] for a in attacks[mid:] if a['priority_fee']])
+            fee_adaptation = abs(late_fees - early_fees) / max(early_fees, 1)
+            
+            adaptive = pool_shift * 0.5 + min(1, fee_adaptation) * 0.5
+        else:
+            adaptive = 0
+        
+        # Normalize scores
+        total = surgical + shotgun + adaptive
+        if total > 0:
+            surgical /= total
+            shotgun /= total
+            adaptive /= total
+        
+        return {
+            'surgical': surgical,
+            'shotgun': shotgun,
+            'adaptive': adaptive
         }
-        
-        profile_str = json.dumps(profile_dict, sort_keys=True)
-        return hashlib.sha256(profile_str.encode()).hexdigest()
     
-    def cluster_entities(self, profiles: List[EntityProfile]) -> Dict[int, List[str]]:
-        """Cluster entities based on behavioral similarity"""
+    def _analyze_risk_profile(self, attacks: List[Dict]) -> Dict[str, float]:
+        """Analyze risk-taking behavior"""
         
-        if len(profiles) < 2:
-            return {0: [p.address for p in profiles]}
+        if not attacks:
+            return {'max_position': 0, 'avg_position': 0, 'loss_tolerance': 0}
         
-        # Extract embeddings
-        embeddings = np.array([p.behavioral_embedding for p in profiles])
+        positions = [a['amount_in'] / 1e9 if a['amount_in'] else 0 for a in attacks]
+        profits = [a['profit'] if a['profit'] else 0 for a in attacks]
         
-        # Normalize
-        embeddings_scaled = self.scaler.fit_transform(embeddings)
+        # Calculate loss tolerance (ratio of losing trades accepted)
+        losses = sum(1 for p in profits if p < 0)
+        loss_tolerance = losses / len(profits) if profits else 0
         
-        # Cluster
-        labels = self.clustering_model.fit_predict(embeddings_scaled)
+        return {
+            'max_position': max(positions) if positions else 0,
+            'avg_position': np.mean(positions) if positions else 0,
+            'loss_tolerance': loss_tolerance
+        }
+    
+    def _analyze_fee_behavior(self, attacks: List[Dict]) -> Dict[str, float]:
+        """Analyze priority fee patterns"""
+        
+        fees = [a['priority_fee'] for a in attacks if a['priority_fee']]
+        
+        if not fees:
+            return {'avg_priority': 0, 'max_priority': 0, 'escalation_rate': 0}
+        
+        # Calculate escalation rate (how fees change over time)
+        if len(fees) > 1:
+            fee_changes = [fees[i+1] - fees[i] for i in range(len(fees)-1)]
+            escalation = np.mean([c for c in fee_changes if c > 0])
+        else:
+            escalation = 0
+        
+        return {
+            'avg_priority': np.mean(fees),
+            'max_priority': max(fees),
+            'escalation_rate': escalation
+        }
+    
+    def _analyze_timing_patterns(self, attacks: List[Dict]) -> Dict[str, float]:
+        """Analyze response time patterns"""
+        
+        times = [a['response_ms'] for a in attacks if a['response_ms'] and a['response_ms'] > 0]
+        
+        if not times:
+            return {'avg_ms': 0, 'p50_ms': 0, 'p99_ms': 0}
+        
+        return {
+            'avg_ms': np.mean(times),
+            'p50_ms': np.percentile(times, 50),
+            'p99_ms': np.percentile(times, 99)
+        }
+    
+    def _calculate_economics(self, attacks: List[Dict]) -> Dict[str, float]:
+        """Calculate economic impact"""
+        
+        total_extraction = sum(a['profit'] for a in attacks if a['profit'] and a['profit'] > 0)
+        total_fees = sum(a['fees'] for a in attacks if a['fees'])
+        
+        profit_margin = (total_extraction - total_fees) / total_extraction if total_extraction > 0 else 0
+        
+        return {
+            'total_extraction': total_extraction,
+            'total_fees': total_fees,
+            'profit_margin': profit_margin
+        }
+    
+    def _analyze_uptime_patterns(self, attacks: List[Dict]) -> Dict:
+        """Analyze activity patterns"""
+        
+        if not attacks:
+            return {'active_hours': [], 'active_days': [], 'ratio': 0}
+        
+        timestamps = [a['timestamp'] for a in attacks if a['timestamp']]
+        
+        if not timestamps:
+            return {'active_hours': [], 'active_days': [], 'ratio': 0}
+        
+        # Extract hours and days
+        hours = [ts.hour for ts in timestamps]
+        days = [ts.weekday() for ts in timestamps]
+        
+        # Calculate uptime ratio (active hours / total hours in period)
+        first_ts = min(timestamps)
+        last_ts = max(timestamps)
+        total_hours = (last_ts - first_ts).total_seconds() / 3600
+        active_hours = len(set((ts.date(), ts.hour) for ts in timestamps))
+        
+        uptime_ratio = active_hours / total_hours if total_hours > 0 else 0
+        
+        return {
+            'active_hours': list(set(hours)),
+            'active_days': list(set(days)),
+            'ratio': min(1, uptime_ratio)
+        }
+    
+    def _estimate_victim_balance(self, victim_addr: str) -> float:
+        """Estimate victim wallet balance (placeholder)"""
+        # In production, would query actual balance
+        return np.random.lognormal(3, 2)  # Log-normal distribution
+    
+    def _is_likely_bot(self, addr: str) -> bool:
+        """Check if address is likely a bot (placeholder)"""
+        # Simple heuristic: check transaction frequency
+        query = f"""
+        SELECT count() as tx_count
+        FROM ch.raw_tx
+        WHERE payer = '{addr}'
+          AND ts >= now() - INTERVAL 1 DAY
+        """
+        
+        result = self.ch.execute(query)
+        if result and result[0][0] > 100:  # More than 100 tx/day
+            return True
+        return False
+
+class WalletClusterer:
+    """Identify linked wallets and entity clusters"""
+    
+    def __init__(self, ch_client):
+        self.ch = ch_client
+        self.graph = nx.Graph()
+        
+    def find_linked_wallets(self, seed_addr: str, max_depth: int = 2) -> List[str]:
+        """Find wallets linked to seed address"""
+        
+        linked = set([seed_addr])
+        to_process = [seed_addr]
+        depth = 0
+        
+        while to_process and depth < max_depth:
+            current_batch = to_process
+            to_process = []
+            
+            for addr in current_batch:
+                # Find wallets that interact frequently
+                connections = self._find_connections(addr)
+                
+                for connected_addr, strength in connections:
+                    if connected_addr not in linked and strength > 0.7:
+                        linked.add(connected_addr)
+                        to_process.append(connected_addr)
+            
+            depth += 1
+        
+        return list(linked)
+    
+    def _find_connections(self, addr: str) -> List[Tuple[str, float]]:
+        """Find strongly connected addresses"""
+        
+        query = f"""
+        SELECT 
+            arrayJoin(accounts) as connected_addr,
+            count() as interactions,
+            sum(amount_in + amount_out) as total_volume
+        FROM ch.raw_tx
+        WHERE payer = '{addr}'
+          AND ts >= now() - INTERVAL 7 DAY
+        GROUP BY connected_addr
+        HAVING interactions > 10
+        ORDER BY interactions DESC
+        LIMIT 20
+        """
+        
+        results = self.ch.execute(query)
+        
+        connections = []
+        for connected, interactions, volume in results:
+            if connected != addr:
+                # Calculate connection strength
+                strength = min(1, interactions / 100) * 0.5 + min(1, volume / 1e12) * 0.5
+                connections.append((connected, strength))
+        
+        return connections
+    
+    def cluster_entities(self, addresses: List[str]) -> Dict[int, List[str]]:
+        """Cluster addresses into entity groups"""
+        
+        # Build feature matrix
+        features = []
+        valid_addrs = []
+        
+        for addr in addresses:
+            feat = self._extract_features(addr)
+            if feat is not None:
+                features.append(feat)
+                valid_addrs.append(addr)
+        
+        if not features:
+            return {}
+        
+        # Normalize features
+        scaler = StandardScaler()
+        features_scaled = scaler.fit_transform(features)
+        
+        # Cluster using DBSCAN
+        clustering = DBSCAN(eps=0.3, min_samples=2)
+        labels = clustering.fit_predict(features_scaled)
         
         # Group by cluster
-        clusters = defaultdict(list)
-        for i, label in enumerate(labels):
-            profiles[i].cluster_id = label
-            clusters[label].append(profiles[i].address)
+        clusters = {}
+        for addr, label in zip(valid_addrs, labels):
+            if label >= 0:  # Ignore noise points (-1)
+                if label not in clusters:
+                    clusters[label] = []
+                clusters[label].append(addr)
         
-        return dict(clusters)
+        return clusters
     
-    def identify_coordinated_actors(self, profiles: List[EntityProfile]) -> List[Tuple[str, str, float]]:
-        """Identify potentially coordinated actors based on behavioral similarity"""
+    def _extract_features(self, addr: str) -> Optional[np.ndarray]:
+        """Extract clustering features for an address"""
         
-        coordinated_pairs = []
+        query = f"""
+        SELECT 
+            count() as tx_count,
+            avg(fee) as avg_fee,
+            avg(priority_fee) as avg_priority,
+            uniqExact(arrayJoin(pool_keys)) as unique_pools,
+            sum(amount_in) / 1e9 as total_in,
+            sum(amount_out) / 1e9 as total_out
+        FROM ch.raw_tx
+        WHERE payer = '{addr}'
+          AND ts >= now() - INTERVAL 7 DAY
+        """
         
-        for i, profile1 in enumerate(profiles):
-            for profile2 in profiles[i+1:]:
-                # Calculate similarity
-                similarity = self._calculate_similarity(profile1, profile2)
-                
-                # High similarity threshold
-                if similarity > 0.85:
-                    coordinated_pairs.append((
-                        profile1.address,
-                        profile2.address,
-                        similarity
-                    ))
+        result = self.ch.execute(query)
         
-        return coordinated_pairs
-    
-    def _calculate_similarity(self, profile1: EntityProfile, profile2: EntityProfile) -> float:
-        """Calculate behavioral similarity between two profiles"""
-        
-        # Cosine similarity of embeddings
-        embedding1 = profile1.behavioral_embedding
-        embedding2 = profile2.behavioral_embedding
-        
-        dot_product = np.dot(embedding1, embedding2)
-        norm1 = np.linalg.norm(embedding1)
-        norm2 = np.linalg.norm(embedding2)
-        
-        if norm1 == 0 or norm2 == 0:
-            return 0.0
-        
-        cosine_sim = dot_product / (norm1 * norm2)
-        
-        # Additional similarity factors
-        pool_overlap = len(set(profile1.preferred_pools) & set(profile2.preferred_pools))
-        hour_overlap = len(set(profile1.active_hours) & set(profile2.active_hours))
-        
-        # Weighted similarity
-        similarity = (
-            cosine_sim * 0.6 +
-            min(pool_overlap / 5, 1.0) * 0.2 +
-            min(hour_overlap / 8, 1.0) * 0.2
-        )
-        
-        return min(similarity, 1.0)
+        if result and result[0][0] > 0:
+            return np.array(result[0])
+        return None
 
-
-class BehavioralSpectrumAnalyzer:
-    """Advanced spectrum analysis for entity behaviors"""
+def generate_behavior_report(entity_addr: str, output_file: str = None):
+    """Generate comprehensive behavioral report for an entity"""
     
-    def __init__(self):
-        self.analyzer = BehavioralAnalyzer()
-        
-    def generate_spectrum_report(self, address: str, transactions: List[Dict]) -> Dict:
-        """Generate comprehensive behavioral spectrum report"""
-        
-        profile = self.analyzer.analyze_entity(address, transactions)
-        
-        # Generate spectrum metrics
-        spectrum = {
-            'entity': address,
-            'classification': self._classify_entity_type(profile),
-            'risk_level': self._calculate_risk_level(profile),
-            'sophistication_score': self._calculate_sophistication(profile),
-            'market_impact': self._estimate_market_impact(profile),
-            'detection_confidence': self._calculate_detection_confidence(profile),
-            
-            'behavioral_metrics': {
-                'attack_style': profile.attack_style,
-                'victim_selection': profile.victim_selection_pattern,
-                'risk_appetite': profile.risk_appetite,
-                'fee_posture': profile.fee_posture,
-                'temporal_pattern': profile.burst_pattern,
+    analyzer = BehavioralAnalyzer(ch_host='clickhouse')
+    metrics = analyzer.analyze_entity(entity_addr, lookback_days=30)
+    
+    report = {
+        'entity': entity_addr,
+        'generated': datetime.utcnow().isoformat(),
+        'metrics': {
+            'attacks': {
+                'total': metrics.total_attacks,
+                'successful': metrics.successful_attacks,
+                'failed': metrics.failed_attacks,
+                'success_rate': metrics.successful_attacks / max(metrics.total_attacks, 1)
             },
-            
-            'financial_metrics': {
-                'total_volume': profile.total_volume,
-                'total_profit': profile.total_profit,
-                'average_profit': profile.average_profit,
-                'success_rate': profile.success_rate,
+            'style': {
+                'primary': 'surgical' if metrics.surgical_score > 0.5 else 
+                          'shotgun' if metrics.shotgun_score > 0.5 else 'adaptive',
+                'scores': {
+                    'surgical': metrics.surgical_score,
+                    'shotgun': metrics.shotgun_score,
+                    'adaptive': metrics.adaptive_score
+                }
             },
-            
-            'operational_metrics': {
-                'uptime': profile.uptime_percentage,
-                'transaction_rate': profile.avg_txns_per_hour,
-                'active_hours': profile.active_hours,
-                'preferred_pools': profile.preferred_pools[:3],
+            'victims': {
+                'retail': metrics.retail_victims,
+                'whale': metrics.whale_victims,
+                'bot': metrics.bot_victims,
+                'unique': metrics.unique_victims
             },
-            
-            'advanced_metrics': {
-                'slippage_impact': profile.slippage_imposed_avg,
-                'sandwich_success': profile.sandwich_success_rate,
-                'path_complexity': profile.arbitrage_path_complexity,
+            'risk': {
+                'max_position_sol': metrics.max_position_sol,
+                'avg_position_sol': metrics.avg_position_sol,
+                'loss_tolerance': metrics.loss_tolerance
             },
-            
-            'profile_dna': profile.profile_dna,
-            'cluster_id': profile.cluster_id,
+            'economics': {
+                'total_extraction_sol': metrics.total_extraction_sol,
+                'total_fees_sol': metrics.total_fees_paid_sol,
+                'profit_margin': metrics.profit_margin
+            },
+            'behavior': {
+                'avg_response_ms': metrics.avg_response_ms,
+                'p50_response_ms': metrics.p50_response_ms,
+                'p99_response_ms': metrics.p99_response_ms,
+                'avg_priority_fee': metrics.avg_priority_fee,
+                'fee_escalation': metrics.fee_escalation_rate
+            },
+            'activity': {
+                'uptime_ratio': metrics.uptime_ratio,
+                'active_hours': metrics.active_hours,
+                'active_days': metrics.active_days
+            },
+            'network': {
+                'unique_pools': metrics.unique_pools,
+                'unique_venues': metrics.unique_venues
+            }
         }
-        
-        return spectrum
+    }
     
-    def _classify_entity_type(self, profile: EntityProfile) -> str:
-        """Classify entity into behavioral categories"""
-        
-        if profile.total_transactions < 10:
-            return "novice"
-        
-        if profile.sandwich_success_rate > 0.7 and profile.attack_style == "surgical":
-            return "elite_sandwicher"
-        elif profile.arbitrage_path_complexity > 3:
-            return "complex_arbitrageur"
-        elif profile.risk_appetite > 0.8:
-            return "high_risk_trader"
-        elif profile.success_rate > 0.8 and profile.total_profit > 100000:
-            return "professional_mev"
-        else:
-            return "opportunistic_trader"
+    # Find linked wallets
+    clusterer = WalletClusterer(analyzer.ch)
+    linked = clusterer.find_linked_wallets(entity_addr)
+    report['linked_wallets'] = linked
     
-    def _calculate_risk_level(self, profile: EntityProfile) -> str:
-        """Calculate entity risk level"""
-        
-        risk_score = (
-            profile.risk_appetite * 0.3 +
-            min(profile.total_volume / 1000000, 1.0) * 0.3 +
-            min(profile.avg_txns_per_hour / 100, 1.0) * 0.2 +
-            (1 if profile.fee_posture == "aggressive" else 0.5) * 0.2
-        )
-        
-        if risk_score > 0.7:
-            return "high"
-        elif risk_score > 0.4:
-            return "medium"
-        else:
-            return "low"
+    # Generate DNA fingerprint
+    dna = hashlib.blake2b(json.dumps(report, sort_keys=True).encode(), digest_size=32).hexdigest()
+    report['dna_fingerprint'] = dna
     
-    def _calculate_sophistication(self, profile: EntityProfile) -> float:
-        """Calculate sophistication score (0-100)"""
-        
-        factors = [
-            profile.sandwich_success_rate * 20,
-            min(profile.arbitrage_path_complexity / 5, 1.0) * 20,
-            (1 if profile.attack_style == "surgical" else 0.5) * 20,
-            profile.success_rate * 20,
-            min(len(profile.preferred_pools) / 10, 1.0) * 20,
-        ]
-        
-        return sum(factors)
+    if output_file:
+        with open(output_file, 'w') as f:
+            json.dump(report, f, indent=2)
+        logger.info(f"Report saved to {output_file}")
     
-    def _estimate_market_impact(self, profile: EntityProfile) -> str:
-        """Estimate entity's market impact"""
-        
-        if profile.total_volume > 10000000:  # > 10M
-            return "major"
-        elif profile.total_volume > 1000000:  # > 1M
-            return "significant"
-        elif profile.total_volume > 100000:  # > 100K
-            return "moderate"
-        else:
-            return "minimal"
+    return report
+
+if __name__ == "__main__":
+    import sys
     
-    def _calculate_detection_confidence(self, profile: EntityProfile) -> float:
-        """Calculate confidence in behavioral detection"""
-        
-        # More data = higher confidence
-        data_confidence = min(profile.total_transactions / 1000, 1.0)
-        
-        # Clear patterns = higher confidence
-        pattern_confidence = 0.5
-        if profile.attack_style != "unknown":
-            pattern_confidence += 0.25
-        if profile.victim_selection_pattern != "unknown":
-            pattern_confidence += 0.25
-        
-        return (data_confidence * 0.6 + pattern_confidence * 0.4)
+    if len(sys.argv) > 1:
+        entity = sys.argv[1]
+        output = sys.argv[2] if len(sys.argv) > 2 else None
+        report = generate_behavior_report(entity, output)
+        print(json.dumps(report, indent=2))
+    else:
+        print("Usage: python entity_analyzer.py <entity_address> [output_file]")
