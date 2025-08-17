@@ -82,21 +82,26 @@ export default defineConfig({
         drop_console: true,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
-        passes: 3,
-        unsafe: true,
-        unsafe_comps: true,
-        unsafe_Function: true,
-        unsafe_math: true,
-        unsafe_methods: true,
-        unsafe_proto: true,
-        unsafe_regexp: true,
-        unsafe_symbols: true,
-        unsafe_undefined: true
+        passes: 2,
+        // Disable unsafe optimizations that break React
+        unsafe: false,
+        unsafe_comps: false,
+        unsafe_Function: false,
+        unsafe_math: false,
+        unsafe_methods: false,
+        unsafe_proto: false,
+        unsafe_regexp: false,
+        unsafe_symbols: false,
+        unsafe_undefined: false,
+        // Keep React internals intact
+        keep_fnames: true,
+        keep_classnames: true
       },
       mangle: {
-        properties: {
-          regex: /^_/
-        }
+        // Don't mangle properties - this breaks React internals
+        properties: false,
+        // Keep important names
+        reserved: ['React', 'ReactDOM', 'ReactCurrentOwner', '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED']
       },
       format: {
         comments: false
@@ -104,31 +109,34 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-3d': ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-viz': ['d3', 'pixi.js', '@pixi/react'],
-          'vendor-proto': ['protobufjs', 'msgpackr', 'lz4js'],
-          'vendor-utils': ['valtio', 'comlink', 'idb']
+        manualChunks: (id) => {
+          // Keep React and React-DOM together to avoid circular dependencies
+          if (id.includes('node_modules/react')) {
+            return 'vendor-react';
+          }
+          // Bundle Three.js and related packages together
+          if (id.includes('three') || id.includes('@react-three')) {
+            return 'vendor-3d';
+          }
+          // Data visualization libraries
+          if (id.includes('d3') || id.includes('pixi') || id.includes('@pixi')) {
+            return 'vendor-viz';
+          }
+          // Protocol and compression libraries
+          if (id.includes('protobuf') || id.includes('msgpack') || id.includes('lz4')) {
+            return 'vendor-proto';
+          }
+          // State management and utilities
+          if (id.includes('valtio') || id.includes('zustand') || id.includes('comlink') || id.includes('idb')) {
+            return 'vendor-utils';
+          }
+          // Let Vite handle other dependencies
+          return undefined;
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
-      },
-      plugins: [
-        terser({
-          compress: {
-            ecma: 2022,
-            module: true,
-            toplevel: true,
-            unsafe_arrows: true,
-            drop_console: true,
-            drop_debugger: true,
-            pure_getters: true,
-            passes: 3
-          }
-        })
-      ]
+      }
     },
     sourcemap: false,
     reportCompressedSize: false,
@@ -136,7 +144,17 @@ export default defineConfig({
     assetsInlineLimit: 8192
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'valtio', 'protobufjs'],
+    include: [
+      'react', 
+      'react-dom', 
+      'valtio', 
+      'protobufjs',
+      'three',
+      '@react-three/fiber',
+      '@react-three/drei',
+      '@react-spring/three',
+      'zustand'
+    ],
     exclude: ['@rollup/rollup-linux-x64-gnu'],
     esbuildOptions: {
       target: 'esnext',
@@ -146,7 +164,7 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3002,
+    port: 3001,
     host: true,
     cors: true,
     hmr: {

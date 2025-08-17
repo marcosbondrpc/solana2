@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host --port 3002",
-    "build": "tsc && vite build",
-    "preview": "vite preview --port 3002",
+    "dev": "vite --host --port 3001",
+    "build": "vite build",
+    "preview": "vite preview --port 3001",
     "analyze": "vite-bundle-visualizer",
     "worker:build": "webpack --config webpack.worker.config.js",
     "proto:compile": "pbjs -t static-module -w es6 -o src/proto/bundle.js ../arbitrage-data-capture/protocol/*.proto && pbts -o src/proto/bundle.d.ts src/proto/bundle.js"
