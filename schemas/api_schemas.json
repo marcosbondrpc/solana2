@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ExportRequest": {
+      "type": "object",
+      "required": ["dataset", "format", "timeRange"],
+      "properties": {
+        "dataset": {
+          "type": "string",
+          "enum": ["blocks", "transactions", "instructions", "dex_fills", "arbitrage_events", "sandwich_events"]
+        },
+        "format": {
+          "type": "string",
+          "enum": ["parquet", "arrow", "csv"]
+        },
+        "timeRange": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          }
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "columns": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ClickHouseQuery": {
+      "type": "object",
+      "required": ["sql"],
+      "properties": {
+        "sql": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "format": {
+          "type": "string",
+          "enum": ["json", "csv", "tsv"],
+          "default": "json"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 30000,
+          "default": 5000
+        }
+      }
+    },
+    "TrainingRequest": {
+      "type": "object",
+      "required": ["model_type", "dataset", "parameters"],
+      "properties": {
+        "model_type": {
+          "type": "string",
+          "enum": ["arbitrage_detector", "sandwich_detector", "liquidation_predictor", "confidence_scorer"]
+        },
+        "dataset": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "epochs": { "type": "integer", "minimum": 1, "maximum": 1000 },
+            "batch_size": { "type": "integer", "minimum": 1, "maximum": 1024 },
+            "learning_rate": { "type": "number", "minimum": 0.00001, "maximum": 1.0 },
+            "validation_split": { "type": "number", "minimum": 0.1, "maximum": 0.5 }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "KillSwitchRequest": {
+      "type": "object",
+      "required": ["action", "reason"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["enable", "disable"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        }
+      }
+    },
+    "AuditEvent": {
+      "type": "object",
+      "required": ["user_id", "action", "resource", "timestamp"],
+      "properties": {
+        "user_id": { "type": "string" },
+        "action": {
+          "type": "string",
+          "enum": ["read", "write", "delete", "export", "train", "deploy", "killswitch"]
+        },
+        "resource": { "type": "string" },
+        "result": {
+          "type": "string",
+          "enum": ["success", "failure", "partial"]
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "required": ["id", "email", "roles"],
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["viewer", "analyst", "operator", "ml_engineer", "admin"]
+          }
+        },
+        "mfa_enabled": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "last_login": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

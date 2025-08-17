@@ -1,0 +1,135 @@
+syntax = "proto3";
+package realtime;
+
+// Core envelope for all WebSocket messages
+message Envelope {
+  uint64 seq = 1;           // Sequence number for ordering
+  string topic = 2;          // Topic: node.health, arb.alert, sandwich.alert, etc.
+  bytes payload = 3;         // Encoded payload
+  uint64 ts_ns = 4;         // Source timestamp in nanoseconds for latency SLO tracking
+  string node_id = 5;       // Source node identifier
+}
+
+// Node health monitoring
+message NodeHealth {
+  string node_id = 1;
+  uint64 slot = 2;
+  float tps = 3;
+  string health = 4;        // healthy, degraded, critical
+  uint32 peers = 5;
+  uint32 avg_block_time_ms = 6;
+  float cpu_usage = 7;
+  float mem_usage = 8;
+  uint64 ingestion_rate = 9;
+}
+
+// Arbitrage detection alert (defensive only - no execution)
+message ArbitrageAlert {
+  string tx_signature = 1;
+  uint64 slot = 2;
+  double roi_pct = 3;
+  double est_profit = 4;
+  uint32 legs = 5;
+  string summary = 6;
+  repeated string dex_route = 7;
+  repeated string tokens = 8;
+  uint64 detected_at_ns = 9;
+  float confidence = 10;
+}
+
+// Sandwich attack detection (defensive only - no execution)
+message SandwichAlert {
+  string victim_tx = 1;
+  string front_tx = 2;
+  string back_tx = 3;
+  uint64 slot = 4;
+  double victim_loss = 5;
+  double attacker_profit = 6;
+  string token_pair = 7;
+  string dex = 8;
+  uint64 detected_at_ns = 9;
+}
+
+// MEV opportunity (detection only)
+message MEVOpportunity {
+  string id = 1;
+  OpportunityType type = 2;
+  uint64 slot = 3;
+  double expected_profit = 4;
+  double confidence = 5;
+  uint32 gas_estimate = 6;
+  uint64 deadline_ns = 7;
+  repeated string route = 8;
+  map<string, string> metadata = 9;
+}
+
+enum OpportunityType {
+  UNKNOWN = 0;
+  ARBITRAGE = 1;
+  SANDWICH = 2;
+  LIQUIDATION = 3;
+  JIT_LIQUIDITY = 4;
+}
+
+// System metrics
+message SystemMetrics {
+  double latency_p50_ms = 1;
+  double latency_p99_ms = 2;
+  double bundle_land_rate = 3;
+  uint64 ingestion_rate = 4;
+  double model_inference_us = 5;
+  uint64 decision_dna_count = 6;
+  uint64 timestamp_ns = 7;
+}
+
+// Thompson Sampling statistics
+message ThompsonStats {
+  repeated BanditArm arms = 1;
+  double total_reward = 2;
+  uint64 total_samples = 3;
+  uint64 timestamp_ns = 4;
+}
+
+message BanditArm {
+  string name = 1;
+  double alpha = 2;
+  double beta = 3;
+  double expected_value = 4;
+  uint64 samples = 5;
+}
+
+// ML model deployment
+message ModelDeployment {
+  string model_id = 1;
+  string version = 2;
+  DeploymentMode mode = 3;
+  double accuracy = 4;
+  uint64 deployed_at_ns = 5;
+  map<string, double> metrics = 6;
+}
+
+enum DeploymentMode {
+  SHADOW = 0;
+  CANARY = 1;
+  PRODUCTION = 2;
+  ROLLBACK = 3;
+}
+
+// Job progress for long-running operations
+message JobProgress {
+  string job_id = 1;
+  string job_type = 2;
+  JobStatus status = 3;
+  double progress_pct = 4;
+  string message = 5;
+  uint64 started_at_ns = 6;
+  uint64 updated_at_ns = 7;
+}
+
+enum JobStatus {
+  PENDING = 0;
+  RUNNING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+}
