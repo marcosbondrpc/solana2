@@ -41,7 +41,7 @@ async def rate_limit_middleware(request: Request, call_next: Callable):
 	return await call_next(request)
 
 async def auth_middleware(request: Request, call_next: Callable):
-	if not settings.API_REQUIRE_AUTH:
+	if not settings.API_REQUIRE_AUTH or not settings.REST_JWT_SECRET:
 		return await call_next(request)
 	path = request.url.path
 	if path == "/health" or path.startswith("/metrics") or path == "/events" or path == "/ws":
