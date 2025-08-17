@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { MEVDashboardUltra } from './components/MEVDashboardUltra';
-import './styles/global.css';
+import App from './App';
+import '../styles/globals.css';
 
 // Initialize performance monitoring
 if ('performance' in window && 'measure' in window.performance) {
@@ -49,8 +49,8 @@ prefetchResources();
 // Render with concurrent mode
 root.render(
   <React.StrictMode>
-    <React.Suspense fallback={<div className="loading">Loading MEV Dashboard...</div>}>
-      <MEVDashboardUltra />
+    <React.Suspense fallback={<div className="loading">Loading MEV Detection Dashboard...</div>}>
+      <App />
     </React.Suspense>
   </React.StrictMode>
 );
