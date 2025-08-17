@@ -43,7 +43,10 @@
     "msgpackr": "^1.11.2",
     "jsonwebtoken": "^9.0.2",
     "apache-arrow": "^17.0.0",
-    "parquetjs": "^0.11.2"
+    "parquetjs": "^0.11.2",
+    "framer-motion": "^11.11.0",
+    "@react-spring/three": "^9.7.5",
+    "events": "^3.3.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
