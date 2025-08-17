@@ -6,7 +6,7 @@ After=network-online.target backend-api.service
 [Service]
 Type=simple
 User=solana2
-WorkingDirectory=/home/kidgordones/0solana/solana2/frontend/apps/dashboard
+WorkingDirectory=/home/kidgordones/0solana/solana2/node/frontend/apps/dashboard
 EnvironmentFile=/home/kidgordones/0solana/solana2/configs/frontend.env
 Environment=NODE_ENV=production
 ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3001
