@@ -8,6 +8,9 @@
     "preview": "vite preview --port 3001",
     "analyze": "vite-bundle-visualizer",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "test": "vitest -c vitest.config.ts run",
+    "test:watch": "vitest -c vitest.config.ts",
+    "coverage": "vitest -c vitest.config.ts run --coverage",
     "worker:build": "webpack --config webpack.worker.config.js",
     "proto:compile": "pbjs -t static-module -w es6 -o src/proto/bundle.js ../arbitrage-data-capture/protocol/*.proto && pbts -o src/proto/bundle.d.ts src/proto/bundle.js"
   },
