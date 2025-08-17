@@ -13,26 +13,37 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_client import Counter, Histogram, Gauge, generate_latest
-from prometheus_client.core import CollectorRegistry
+try:
+    from prometheus_client import Counter, Histogram, Gauge, generate_latest
+    from prometheus_client.core import CollectorRegistry
+except Exception:
+    class _DummyMetric:
+        def labels(self, *args, **kwargs): return self
+        def inc(self, *args, **kwargs): pass
+        def observe(self, *args, **kwargs): pass
+        def set(self, *args, **kwargs): pass
+    def Counter(*args, **kwargs): return _DummyMetric()
+    def Histogram(*args, **kwargs): return _DummyMetric()
+    def Gauge(*args, **kwargs): return _DummyMetric()
+    class CollectorRegistry: pass
+    def generate_latest(_): return b""
 import uvicorn
 
 # Import routes
-from routes.datasets import router as datasets_router
-from routes.clickhouse import router as clickhouse_router
-from routes.training import router as training_router
-from routes.control import router as control_router
-from routes.realtime import router as realtime_router
+from api.routes.datasets import router as datasets_router
+from api.routes.clickhouse import router as clickhouse_router
+from api.routes.training import router as training_router
+from api.routes.control import router as control_router
+from api.routes.realtime import router as realtime_router
 
 # Import defensive services
-from defensive_integration import router as defensive_router
+from api.defensive_integration import router as defensive_router
 
 # Import services
-from services.clickhouse_client import initialize_clickhouse
-from services.kafka_bridge import initialize_kafka_bridge
+from api.services.clickhouse_client import initialize_clickhouse
 
 # Import security
-from security.audit import AuditMiddleware, audit_logger
+from api.security.audit import AuditMiddleware, audit_logger
 
 # Metrics
 registry = CollectorRegistry()
@@ -54,6 +65,12 @@ active_connections = Gauge(
     registry=registry
 )
 
+def get_env(*names: str) -> str:
+    for n in names:
+        v = os.getenv(n)
+        if v:
+            return v
+    return ""
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -62,9 +79,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting MEV API Server...")
     
-    # Initialize services
+    # Initialize services (non-fatal)
+    # Initialize ClickHouse
     try:
-        # Initialize ClickHouse
         await initialize_clickhouse(
             host=os.getenv("CLICKHOUSE_HOST", "localhost"),
             port=int(os.getenv("CLICKHOUSE_PORT", "8123")),
@@ -73,24 +90,26 @@ async def lifespan(app: FastAPI):
             password=os.getenv("CLICKHOUSE_PASSWORD", "")
         )
         print("✅ ClickHouse initialized")
-        
-        # Initialize Kafka bridge
+    except Exception as e:
+        print(f"⚠️ ClickHouse init failed: {e}")
+
+    # Initialize Kafka bridge
+    try:
+        from api.services.kafka_bridge import initialize_kafka_bridge
         await initialize_kafka_bridge(
-            bootstrap_servers=os.getenv("KAFKA_SERVERS", "localhost:9092"),
+            bootstrap_servers=get_env("KAFKA_SERVERS", "KAFKA") or "localhost:9092",
             group_id="mev-api-consumer"
         )
         print("✅ Kafka bridge initialized")
-        
-        # Verify audit chain integrity
-        chain_valid = await audit_logger.verify_chain()
-        if not chain_valid:
-            print("⚠️ WARNING: Audit chain integrity check failed")
-        else:
-            print("✅ Audit chain verified")
-        
     except Exception as e:
-        print(f"❌ Failed to initialize services: {e}")
-        raise
+        print(f"⚠️ Kafka bridge init failed: {e}")
+
+    # Verify audit chain integrity
+    try:
+        chain_valid = await audit_logger.verify_chain()
+        print("✅ Audit chain verified" if chain_valid else "⚠️ WARNING: Audit chain integrity check failed")
+    except Exception as e:
+        print(f"⚠️ Audit chain verification error: {e}")
     
     print("✅ MEV API Server ready")
     print(f"📊 Metrics available at /metrics")
@@ -102,8 +121,11 @@ async def lifespan(app: FastAPI):
     print("🛑 Shutting down MEV API Server...")
     
     # Cleanup services
-    from services.clickhouse_client import clickhouse_pool
-    from services.kafka_bridge import kafka_bridge
+    from api.services.clickhouse_client import clickhouse_pool
+    try:
+        from api.services.kafka_bridge import kafka_bridge
+    except Exception:
+        kafka_bridge = None
     
     if clickhouse_pool:
         await clickhouse_pool.close()
@@ -168,9 +190,8 @@ async def metrics_middleware(request: Request, call_next):
 @app.get("/health")
 async def health_check() -> Dict[str, Any]:
     """Health check with dependency status"""
-    from services.clickhouse_client import get_clickhouse_pool
-    from services.kafka_bridge import get_kafka_bridge
-    from models.schemas import HealthResponse, DependencyStatus
+    from api.services.clickhouse_client import get_clickhouse_pool
+    from api.models.schemas import HealthResponse, DependencyStatus
     
     dependencies = []
     overall_status = "healthy"
@@ -194,12 +215,13 @@ async def health_check() -> Dict[str, Any]:
             error=str(e)
         ))
         overall_status = "degraded"
-    
     # Check Kafka
     try:
+        from api.services.kafka_bridge import get_kafka_bridge
         bridge = await get_kafka_bridge()
         lag = await bridge.get_consumer_lag()
         total_lag = sum(lag.values())
+        
         
         status = "healthy" if total_lag < 10000 else "degraded"
         dependencies.append(DependencyStatus(
