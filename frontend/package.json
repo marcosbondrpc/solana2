@@ -52,8 +52,10 @@
     "webtransport": "^1.0.0",
     "workbox-window": "^7.3.0",
     "zod": "^3.23.8",
-    "zustand": "^4.5.5"
-  },
+    "zustand": "^4.5.5",
+    "echarts": "^5.5.0",
+    "echarts-for-react": "^3.0.2"
+    },
   "devDependencies": {
     "@babel/core": "^7.28.3",
     "@babel/plugin-transform-react-jsx": "^7.27.1",
