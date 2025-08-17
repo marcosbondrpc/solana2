@@ -3,7 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ENABLE_OPS } from './flags';
 import OpsLayout from './layouts/OpsLayout';
 import { OpsHome, NodePage, ScraperPage, ArbitragePage, MevPage, StatsPage, ConfigPage } from './routes/ops/routes';
-const MEVDetectionDashboard = lazy(() => import('./pages/MEVDetectionDashboard'));
+const MEVDetectionDashboard = lazy(() =>
+  import('./pages/MEVDetectionDashboard').then(m => ({ default: m.MEVDetectionDashboard }))
+);
 
 export default function App() {
   if (!ENABLE_OPS) {

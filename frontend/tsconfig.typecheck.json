@@ -9,6 +9,7 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
+  "exclude": ["**/*"],
   "files": [
     "src/config/env.ts",
     "src/flags.ts",
