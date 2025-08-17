@@ -152,10 +152,12 @@ tune-network:
 # Git Operations
 sync:
 	@echo "🔄 Syncing with GitHub..."
-	@git pull origin master
-	@git add -A
-	@git commit -m "Auto-sync: $(shell date '+%Y-%m-%d %H:%M:%S')"
-	@git push origin master
+	@git pull origin master --no-edit || true
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		git add -A; \
+		git commit -m "Auto-sync: $(shell date '+%Y-%m-%d %H:%M:%S')"; \
+	fi
+	@git push origin master || echo "⚠️ Push failed - configure authentication with: git remote set-url origin https://USERNAME:TOKEN@github.com/marcosbondrpc/solana2.git"
 
 # SOTA MEV Operations
 sota-up:
