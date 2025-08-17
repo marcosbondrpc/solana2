@@ -422,6 +422,95 @@ app.get('/api/v1/metrics/landing-rate', async (req, res) => {
     }
 });
 
+// GET /api/v1/metrics/archetype - Archetype distribution metrics (DEFENSIVE-ONLY)
+app.get('/api/v1/metrics/archetype', async (req, res) => {
+    try {
+        const { days = 7 } = req.query;
+        
+        const query = `
+            WITH entity_metrics AS (
+                SELECT 
+                    attacker_addr,
+                    count() as attack_count,
+                    sum(attacker_profit_sol) as total_profit,
+                    avg(d_ms) as avg_response_ms,
+                    uniqExact(pool) as unique_pools,
+                    avg(ensemble_score) as avg_confidence
+                FROM ch.candidates
+                WHERE detection_ts >= now() - INTERVAL ${parseInt(days)} DAY
+                GROUP BY attacker_addr
+            )
+            SELECT
+                CASE
+                    WHEN attack_count > 1000 AND avg_response_ms < 20 THEN 'Empire'
+                    WHEN unique_pools < 5 AND avg_confidence > 0.8 THEN 'Warlord'
+                    WHEN attack_count < 100 THEN 'Guerrilla'
+                    ELSE 'Unknown'
+                END as archetype,
+                count() as entity_count,
+                sum(total_profit) as archetype_profit,
+                avg(avg_response_ms) as avg_latency,
+                avg(avg_confidence) as avg_confidence_score
+            FROM entity_metrics
+            GROUP BY archetype
+        `;
+        
+        const response = await axios.post(`${CONFIG.CLICKHOUSE_URL}`, {
+            query: query
+        });
+        
+        res.json({
+            timestamp: new Date().toISOString(),
+            period_days: parseInt(days),
+            archetypes: response.data,
+            metadata: {
+                confidence_interval: 0.95,
+                detection_only: true
+            }
+        });
+    } catch (error) {
+        console.error('Archetype metrics error:', error);
+        res.status(500).json({ error: 'Failed to fetch archetype metrics' });
+    }
+});
+
+// GET /api/v1/metrics/adjacency - Bundle adjacency metrics (DEFENSIVE-ONLY)
+app.get('/api/v1/metrics/adjacency', async (req, res) => {
+    try {
+        const { days = 7 } = req.query;
+        
+        const query = `
+            SELECT
+                toDate(detection_ts) as date,
+                avg(d_ms) as avg_adjacency_ms,
+                quantile(0.5)(d_ms) as p50_adjacency_ms,
+                quantile(0.95)(d_ms) as p95_adjacency_ms,
+                quantile(0.99)(d_ms) as p99_adjacency_ms,
+                countIf(d_ms < 50) / count() as tight_adjacency_rate,
+                countIf(d_slots = 0) / count() as same_slot_rate,
+                avg(ensemble_score) as avg_detection_confidence
+            FROM ch.candidates
+            WHERE detection_ts >= now() - INTERVAL ${parseInt(days)} DAY
+            GROUP BY date
+            ORDER BY date DESC
+        `;
+        
+        const response = await axios.post(`${CONFIG.CLICKHOUSE_URL}`, {
+            query: query
+        });
+        
+        res.json({
+            timestamp: new Date().toISOString(),
+            period_days: parseInt(days),
+            daily_metrics: response.data,
+            detection_only: true
+        });
+    } catch (error) {
+        console.error('Adjacency metrics error:', error);
+        res.status(500).json({ error: 'Failed to fetch adjacency metrics' });
+    }
+});
+
 // SOL drain/extraction metrics endpoint
 app.get('/api/v1/metrics/sol-drain', async (req, res) => {
     try {

@@ -2,7 +2,8 @@
         train-model models-super pgo-mev swap-model emergency-stop throttle audit-trail \
         historical-infra historical-start historical-stop historical-ingester historical-backfill \
         historical-test historical-stats historical-clean proto pgo-collect pgo-build \
-        detect-train detect-serve behavior-report detect-infra detect-test detect-clean
+        detect-train detect-serve behavior-report detect-infra detect-test detect-clean \
+        detection-up detection-down detection-logs detection-status detection-test archetype-report
 
 # Frontend Commands
 fe2:
@@ -196,6 +197,37 @@ arb-scan:
 arb-execute:
 	@echo "💰 Executing arbitrage opportunities..."
 	@curl -X POST http://localhost:8000/api/arbitrage/execute
+
+# MEV Detection System Commands (DEFENSIVE-ONLY)
+detection-up:
+	@echo "🔍 Starting MEV Detection System (DEFENSIVE-ONLY)..."
+	docker-compose -f docker-compose.integrated.yml up -d clickhouse redis kafka prometheus grafana
+	docker-compose -f docker-compose.detector.yml up -d
+	@echo "✅ Detection system started. Dashboard at http://localhost:3001"
+
+detection-down:
+	@echo "⏸️ Stopping MEV Detection System..."
+	docker-compose -f docker-compose.detector.yml down
+	@echo "✅ Detection system stopped."
+
+detection-logs:
+	docker-compose -f docker-compose.detector.yml logs -f --tail=100
+
+detection-status:
+	@echo "🏥 Checking detection system status..."
+	@curl -s http://localhost:8000/health | jq . || echo "❌ Detection API not responding"
+	@curl -s http://localhost:8800/health | jq . || echo "❌ Sandwich detector not responding"
+	@curl -s http://localhost:8801/health | jq . || echo "❌ Archetype classifier not responding"
+	@echo "📊 Detection metrics: http://localhost:9100/metrics"
+
+detection-test:
+	@echo "🧪 Testing detection endpoints..."
+	@curl -s "http://localhost:8000/api/v1/metrics/archetype?days=7" | jq .
+	@curl -s "http://localhost:8000/api/v1/detection/sandwiches?limit=5" | jq .
+
+archetype-report:
+	@echo "📈 Generating archetype analysis report..."
+	@curl -s "http://localhost:8000/api/v1/reports/comparative" | jq .
 
 # MEV Detection Operations (DETECTION-ONLY)
 detect-train:

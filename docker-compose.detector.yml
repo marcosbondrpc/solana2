@@ -1,138 +1,228 @@
-version: '3.8'
+version: '3.9'
+
+# MEV Detection System - DEFENSIVE ONLY
+# Pure observation and analysis infrastructure
 
 services:
-  detector:
+  # ShredStream Ingestion Service
+  shred-ingest:
     build:
-      context: ./services/detector
+      context: ./services/shred-ingest
       dockerfile: Dockerfile
-    container_name: mev-detector
-    restart: unless-stopped
+    container_name: shred-ingest
     ports:
-      - "8800:8800"
+      - "9100:9100"  # Metrics port
     environment:
+      - RUST_LOG=info,shred_ingest=debug
+      - JITO_SHREDSTREAM_URL=${JITO_SHREDSTREAM_URL:-grpc://mainnet.block-engine.jito.wtf:443}
+      - JITO_AUTH_TOKEN=${JITO_AUTH_TOKEN}
       - CLICKHOUSE_URL=http://clickhouse:8123
-      - CLICKHOUSE_HOST=clickhouse
-      - CLICKHOUSE_PORT=9000
-      - REDIS_URL=redis://redis:6379
-      - DETECT_ONLY=1
-      - DRY_RUN=1
-      - SIMULATION_MODE=1
-      - MODEL_PATH=/app/models
-      - CONFIG_PATH=/app/configs/entities.yaml
-      - LOG_LEVEL=INFO
-    volumes:
-      - ./models:/app/models:ro
-      - ./configs:/app/configs:ro
-      - ./logs/detector:/app/logs
-    networks:
-      - mev-network
+      - CLICKHOUSE_DATABASE=ch
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - BATCH_SIZE=1000
+      - BATCH_TIMEOUT_MS=100
+      - MAX_INFLIGHT=10
+      - COMPRESSION=lz4
+      - DETECTION_ONLY=true
     depends_on:
       - clickhouse
-      - redis
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8800/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    networks:
+      - solana-backend
+    cap_add:
+      - NET_ADMIN  # For DSCP marking
+      - SYS_NICE   # For CPU affinity
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    restart: unless-stopped
     deploy:
       resources:
         limits:
           cpus: '4'
-          memory: 8G
+          memory: 2G
         reservations:
           cpus: '2'
-          memory: 4G
+          memory: 1G
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:23.8
-    container_name: mev-clickhouse
-    restart: unless-stopped
-    ports:
-      - "8123:8123"  # HTTP interface
-      - "9000:9000"  # Native protocol
-    environment:
-      - CLICKHOUSE_DB=ch
-      - CLICKHOUSE_USER=default
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-      - CLICKHOUSE_MAX_MEMORY_USAGE=8000000000
-      - CLICKHOUSE_MAX_MEMORY_USAGE_FOR_USER=8000000000
-    volumes:
-      - clickhouse-data:/var/lib/clickhouse
-      - ./sql/ddl:/docker-entrypoint-initdb.d:ro
-      - ./clickhouse/config.xml:/etc/clickhouse-server/config.d/config.xml:ro
-    networks:
-      - mev-network
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-
-  redis:
-    image: redis:7-alpine
-    container_name: mev-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis-data:/data
-    networks:
-      - mev-network
-
-  # Inference pipeline workers
-  inference-worker:
+  # Sandwich Detection Engine
+  sandwich-detector:
     build:
       context: ./services/detector
-      dockerfile: Dockerfile.worker
-    container_name: mev-inference-worker
-    restart: unless-stopped
+      dockerfile: Dockerfile
+    container_name: sandwich-detector
+    ports:
+      - "8800:8800"  # API port
+      - "9101:9101"  # Metrics port
     environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - REDIS_URL=redis://redis:6379
-      - WORKER_TYPE=inference
-      - BATCH_SIZE=64
-      - NUM_WORKERS=4
-    volumes:
-      - ./models:/app/models:ro
-      - ./configs:/app/configs:ro
-    networks:
-      - mev-network
+      - RUST_LOG=info,sandwich_detector=debug
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_DATABASE=ch
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - MIN_CONFIDENCE=0.75
+      - MAX_SLOT_DISTANCE=3
+      - MIN_PRICE_IMPACT=0.001
+      - ENABLE_OBFUSCATION_DETECTION=true
+      - ENABLE_MULTI_ADDRESS_DETECTION=true
+      - DETECTION_ONLY=true
     depends_on:
       - clickhouse
       - redis
+    networks:
+      - solana-backend
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: unless-stopped
     deploy:
-      replicas: 2
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 1G
 
-  # Behavioral analysis worker
-  behavior-worker:
+  # Archetype Classification Service
+  archetype-classifier:
     build:
-      context: ./services/detector
-      dockerfile: Dockerfile.worker
-    container_name: mev-behavior-worker
-    restart: unless-stopped
+      context: ./services/infer
+      dockerfile: Dockerfile
+    container_name: archetype-classifier
+    ports:
+      - "8801:8801"  # API port
     environment:
-      - CLICKHOUSE_HOST=clickhouse
-      - REDIS_URL=redis://redis:6379
-      - WORKER_TYPE=behavior
-      - ANALYSIS_INTERVAL=300  # 5 minutes
+      - PYTHONUNBUFFERED=1
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_DATABASE=ch
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - MODEL_PATH=/models
+      - DETECTION_ONLY=true
+      - LOG_LEVEL=INFO
     volumes:
-      - ./configs:/app/configs:ro
-      - ./reports:/app/reports
-    networks:
-      - mev-network
+      - ./services/infer:/app
+      - ./models:/models:ro
+      - ./docs/secrets:/app/reports
     depends_on:
       - clickhouse
       - redis
+    networks:
+      - solana-backend
+    restart: unless-stopped
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8801 --reload
+
+  # Entity Fleet Detector
+  fleet-detector:
+    build:
+      context: ./services/infer
+      dockerfile: Dockerfile
+    container_name: fleet-detector
+    ports:
+      - "8802:8802"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_DATABASE=ch
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-arbitrage123}
+      - DETECTION_ONLY=true
+      - SERVICE_TYPE=fleet
+    volumes:
+      - ./services/infer:/app
+    depends_on:
+      - clickhouse
+    networks:
+      - solana-backend
+    restart: unless-stopped
+    command: python fleet_detector.py
+
+  # Detection API Gateway
+  detection-api:
+    build:
+      context: ./services/detector
+      dockerfile: Dockerfile.api
+    container_name: detection-api
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - REDIS_HOST=redis
+      - SANDWICH_DETECTOR_URL=http://sandwich-detector:8800
+      - ARCHETYPE_CLASSIFIER_URL=http://archetype-classifier:8801
+      - FLEET_DETECTOR_URL=http://fleet-detector:8802
+      - ENABLE_CORS=true
+      - DETECTION_ONLY=true
+    depends_on:
+      - sandwich-detector
+      - archetype-classifier
+      - fleet-detector
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Detection Dashboard
+  detection-dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
+        - NEXT_PUBLIC_WS_URL=ws://localhost:4000/ws
+        - NEXT_PUBLIC_DETECTION_ONLY=true
+    container_name: detection-dashboard
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Grafana with detection dashboards
+  grafana-detection:
+    image: grafana/grafana:10.4.3
+    container_name: grafana-detection
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=redis-datasource,redis-app
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/behavioral_spectrum.json
+    volumes:
+      - grafana-detection-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - clickhouse
+      - prometheus
+    networks:
+      - solana-backend
+    restart: unless-stopped
+
+  # Prometheus for detection metrics
+  prometheus-detection:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus-detection
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./configs/prometheus-detection.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-detection-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--web.enable-lifecycle'
+    networks:
+      - solana-backend
+    restart: unless-stopped
 
 networks:
-  mev-network:
-    driver: bridge
+  solana-backend:
+    external: true
 
 volumes:
-  clickhouse-data:
-  redis-data:
+  grafana-detection-data:
+  prometheus-detection-data:
