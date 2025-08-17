@@ -1,212 +1,172 @@
-# CLAUDE.md - AI Development Guide
+# CLAUDE.md
 
-## 🚀 Legendary Solana MEV Infrastructure
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Welcome! You're working on a **state-of-the-art MEV system** capable of handling **billions in volume** with **sub-10ms latency**.
+## System Overview
 
-### System Overview
+**Legendary Solana MEV Infrastructure** - A protobuf-first, ultra-low-latency MEV system handling billions in volume with sub-10ms decision latency.
 
-This is a **protobuf-first**, **ultra-low-latency** Solana MEV infrastructure with:
-- **End-to-end decision latency**: ≤8ms P50, ≤20ms P99
-- **Bundle land rates**: ≥65% contested, ≥85% off-peak  
-- **Model inference**: ≤100μs P99
-- **ClickHouse ingestion**: ≥235k rows/s sustained
+### Critical Performance Requirements
+- **Decision Latency**: ≤8ms P50, ≤20ms P99
+- **Bundle Land Rate**: ≥65% contested
+- **Model Inference**: ≤100μs P99
+- **ClickHouse Ingestion**: ≥235k rows/s
 
-### Architecture Components
+## Development Commands
 
-1. **Ingestion Layer**
+### Essential Operations
+```bash
+make legendary          # Bootstrap entire system
+make lab-smoke-test     # Run all tests (must pass before any deployment)
+make tmux              # Start MEV cockpit (monitoring interface)
+make health-check      # Verify system health
+make sync              # Sync with GitHub repository
+```
+
+### Frontend Development
+```bash
+cd frontend
+npm install            # Install dependencies
+npm run dev            # Start dev server (port 42392)
+npm run build          # Build production
+npm run lint           # Lint code
+npm run typecheck      # Type checking
+npm run proto:gen      # Regenerate protobuf types
+```
+
+### Model & ML Operations
+```bash
+make train-model MODULE=mev DATE_RANGE=7d  # Train models
+make models-super                          # Build Treelite models
+make pgo-mev                              # Profile-guided optimization
+make swap-model                           # Hot-reload models
+```
+
+### Testing Requirements
+Before ANY code changes:
+1. Run `make lab-smoke-test` - MUST pass all tests
+2. Frontend: `npm run typecheck` and `npm run lint`
+3. Backend: `cargo test --release` in rust-services/
+
+### Emergency Controls
+```bash
+make emergency-stop        # Kill all trading immediately
+make throttle PERCENT=10   # Reduce to 10% capacity
+make audit-trail          # View command history
+```
+
+## Architecture & Code Structure
+
+### Core Components
+
+1. **Ingestion Layer** (`arbitrage-data-capture/`)
    - WebSocket/WebTransport with protobuf
    - Zero-copy message processing
-   - QUIC with custom congestion control
+   - Located in: `api/wt_gateway.py`, `api/realtime.py`
 
-2. **Decision Engine**
-   - Treelite-compiled models with PGO
-   - Thompson Sampling for route selection
-   - Decision DNA fingerprinting
+2. **Decision Engine** (`rust-services/`)
+   - Treelite-compiled XGBoost models
+   - Thompson Sampling in `shared/src/bandit_budgeted.rs`
+   - Decision DNA tracking in `shared/src/decision_dna.rs`
 
-3. **Execution Layer**
-   - Direct RPC, Jito bundles, hedged sending
-   - DSCP marking and SO_TXTIME
-   - Leader-phase timing gates
+3. **Execution Layer** (`backend/services/`)
+   - Jito bundle submission: `jito-engine/`
+   - Hedged sending: `rust-services/shared/src/hedged_sender.rs`
+   - Path selection: `jito-engine/src/path_selector.rs`
 
-4. **Storage Layer**
-   - ClickHouse with Protobuf Kafka engine
-   - Typed tables (no JSON in hot path)
-   - S3 cold storage with TTL
+4. **Storage** (`clickhouse/`)
+   - Schema definitions in DDL files
+   - Protobuf Kafka integration: `11_kafka_proto.sql`
 
-5. **Control Plane**
-   - Ed25519 signing with 2-of-3 multisig
-   - ACK hash-chain for audit trail
-   - SLO-based kill-switches
+5. **Frontend** (`frontend/`)
+   - Next.js with React
+   - Real-time protobuf decoding in workers/
+   - MEV control center: `components/mev/`
 
-### Key Files & Locations
+### Protocol Buffers
+All communication uses protobuf. Schemas in `protocol/`:
+- `realtime.proto` - Market data & opportunities
+- `control.proto` - Signed commands with Ed25519
+- `jobs.proto` - Background job management
 
-```
-/home/kidgordones/0solana/node/
-├── arbitrage-data-capture/
-│   ├── protocol/           # Protobuf schemas
-│   ├── clickhouse/         # DDL and migrations
-│   ├── rust-services/      # Core MEV agents
-│   └── tools/              # Treelite, DNA anchor
-├── frontend/
-│   └── apps/dashboard/     # React dashboard
-├── backend/
-│   └── services/control-plane/  # FastAPI backend
-├── api/
-│   └── control.py          # Signed command handler
-└── Makefile                # All operations
-```
+### Key Technologies
+- **Languages**: Rust (performance-critical), Python (ML/API), TypeScript (frontend)
+- **Databases**: ClickHouse (time-series), Redis (caching)
+- **Messaging**: Kafka/Redpanda with protobuf
+- **Models**: XGBoost compiled to Treelite with PGO
 
-### Critical Performance Targets
+## Safety & Security
 
-| Metric | Target | Why Critical |
-|--------|--------|--------------|
-| Decision Latency P50 | ≤8ms | Beat competitors to opportunities |
-| Decision Latency P99 | ≤20ms | Consistent performance under load |
-| Bundle Land Rate | ≥65% | Profitability threshold |
-| Model Inference | ≤100μs | Leaves time for network/execution |
-| Ingestion Rate | ≥200k/s | Handle peak Solana activity |
-
-### Development Commands
-
-```bash
-# Essential operations
-make legendary          # Bootstrap everything
-make lab-smoke-test     # Run comprehensive tests
-make tmux              # Start the cockpit
-make health-check      # Check system status
-
-# Model operations
-make train-model MODULE=mev DATE_RANGE=7d
-make models-super      # Build Treelite
-make pgo-mev          # Profile-guided optimization
-make swap-model       # Hot-reload without restart
-
-# Emergency controls
-make emergency-stop    # Kill all trading
-make throttle PERCENT=10  # Reduce to 10%
-make audit-trail      # View command history
-```
+### Cryptographic Requirements
+- All control commands MUST be Ed25519 signed
+- 2-of-3 multisig for critical operations
+- Decision DNA fingerprints tracked for all decisions
+- ACK hash-chain for audit trail
 
 ### Testing Checklist
+Before deployment, verify:
+1. ✅ P50 latency ≤ 8ms
+2. ✅ P99 latency ≤ 20ms  
+3. ✅ Bundle land rate ≥ 65%
+4. ✅ ClickHouse ingestion ≥ 200k/s
+5. ✅ Kill-switches functional
+6. ✅ Decision DNA tracking active
+7. ✅ ACK chain intact
 
-Before ANY deployment:
-1. ✅ Run `make lab-smoke-test`
-2. ✅ Verify P50 ≤ 8ms, P99 ≤ 20ms
-3. ✅ Check bundle land rate ≥ 65%
-4. ✅ Confirm ClickHouse ingestion ≥ 200k/s
-5. ✅ Test kill-switches trigger correctly
-6. ✅ Verify Decision DNA on all events
-7. ✅ Check ACK chain has no gaps
-
-### Network Access
-
+## Network Access
 - **Frontend**: http://45.157.234.184:3001
 - **Backend API**: http://45.157.234.184:8000
 - **API Docs**: http://45.157.234.184:8000/docs
 
-### GitHub Auto-Sync
+## GitHub Integration
+Repository: https://github.com/marcosbondrpc/solana2
+- Auto-pull every minute (restarts on changes)
+- Auto-push every 5 minutes
+- Use `make sync` for manual sync
 
-The system auto-syncs with GitHub:
-- **Pull**: Every minute (automatic restart on changes)
-- **Push**: Every 5 minutes (automatic commit)
-- **Repository**: https://github.com/marcosbondrpc/solana2
+## Performance Optimization
 
-### Safety Mechanisms
+### CPU Tuning
+```bash
+sudo cpupower frequency-set -g performance
+taskset -c 0-7 ./mev-agent  # Pin to cores
+```
 
-1. **SLO Kill-Switches**
-   - Auto-throttle if P99 > 20ms
-   - Stop if land rate < 55%
-   - Kill if negative EV > 1%
+### Network Tuning  
+```bash
+sudo sysctl -w net.core.rmem_max=134217728
+sudo sysctl -w net.core.wmem_max=134217728
+```
 
-2. **Cryptographic Controls**
-   - All commands Ed25519 signed
-   - 2-of-3 multisig for critical ops
-   - Immutable ACK chain
+### Model Optimization
+```bash
+make pgo-collect  # Collect profile
+make pgo-build    # Build with profile
+```
 
-3. **Decision Audit**
-   - Every decision has DNA fingerprint
-   - Daily Merkle anchor to Solana
-   - Full forensic traceability
+## Critical Rules
+- **NEVER** disable Decision DNA tracking
+- **NEVER** bypass cryptographic signing
+- **ALWAYS** run `make lab-smoke-test` before deployment
+- **ALWAYS** verify SLOs are met
+- **ALWAYS** keep kill-switches enabled
 
-### Common Issues & Solutions
+## Common Issues
 
 | Issue | Solution |
 |-------|----------|
-| Port 3000 conflict | Frontend uses 3001, Grafana disabled |
+| Port 3000 conflict | Frontend uses 3001 |
 | Missing protobuf | Run `make proto` |
-| Model not loading | Check `make models-super` output |
+| Model not loading | Check `make models-super` |
 | Low land rate | Adjust Thompson Sampling priors |
-| High latency | Check network DSCP marking |
-| ClickHouse lag | Verify Kafka consumer groups |
+| High latency | Check DSCP marking |
 
-### Performance Optimization
-
-1. **CPU Optimization**
-   ```bash
-   sudo cpupower frequency-set -g performance
-   taskset -c 0-7 ./mev-agent  # Pin to cores
-   ```
-
-2. **Network Tuning**
-   ```bash
-   sudo sysctl -w net.core.rmem_max=134217728
-   sudo sysctl -w net.core.wmem_max=134217728
-   ```
-
-3. **Model Optimization**
-   ```bash
-   make pgo-collect  # Collect profile
-   make pgo-build    # Build with profile
-   ```
-
-### Important Notes
-
-- **NEVER** disable Decision DNA tracking
-- **NEVER** bypass cryptographic signing
-- **ALWAYS** test in staging before prod
-- **ALWAYS** monitor SLOs in real-time
-- **ALWAYS** have kill-switches enabled
-
-### Feature Flags
-
+## Feature Flags
 ```bash
-export TRANSPORT_MODE=proto      # Use protobuf (not json)
+export TRANSPORT_MODE=proto      # Use protobuf
 export HEDGED_SEND=on           # Enable hedged sending
-export CANARIES=on              # Enable canary transactions
 export KILL_SWITCH=on           # Enable auto-throttle
 export DNA_TRACKING=on          # Track decision lineage
 ```
 
-### Monitoring Dashboards
-
-Access Grafana dashboards for:
-- **MEV Opportunities**: Real-time feed with DNA
-- **Bandit Performance**: Thompson Sampling metrics
-- **System Health**: Latency, land rates, ingestion
-- **Control Plane**: Commands, ACKs, multisig status
-
-### Contact & Support
-
-- **GitHub**: https://github.com/marcosbondrpc/solana2
-- **Lead Developer**: @marcosbondrpc
-- **System Status**: Check SYSTEM_STATUS.md
-
----
-
-## Mission Critical
-
-This system is designed to handle **billions in MEV volume**. Every microsecond matters. Every decision is tracked. Every command is signed. 
-
-The architecture is built for:
-- **Speed**: Sub-10ms decisions
-- **Scale**: 200k+ events/second
-- **Safety**: Cryptographic verification
-- **Profit**: Adaptive optimization
-
-Remember: **Built for billions. Optimized for microseconds.**
-
----
-
-*Last updated: August 16, 2025*
-*System version: LEGENDARY v1.0*
+**Remember**: Built for billions. Optimized for microseconds. Every decision tracked. Every command signed.

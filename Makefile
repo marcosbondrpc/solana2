@@ -5,13 +5,13 @@
 
 # Frontend Commands
 fe2:
-	cd frontend2 && npm install
+	cd frontend && npm install
 
 fe2-build:
-	cd frontend2 && npm run build
+	cd frontend && npm run build
 
 fe2-start:
-	cd frontend2 && npm run start
+	cd frontend && npm run start
 
 # Legendary MEV Infrastructure
 legendary:
@@ -259,7 +259,7 @@ risk-resume:
 # SOTA Dashboard
 dashboard:
 	@echo "🎮 Starting SOTA MEV Dashboard..."
-	@cd frontend2 && npm run dev -- --port 3001 --host 0.0.0.0
+	@cd frontend && npm run dev -- --port 3001 --host 0.0.0.0
 
 # Complete SOTA Setup
 sota-legendary:
