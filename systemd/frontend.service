@@ -1,0 +1,21 @@
+[Unit]
+Description=Solana MEV Frontend (Vite preview - Dashboard)
+Wants=network-online.target backend-api.service
+After=network-online.target backend-api.service
+
+[Service]
+Type=simple
+User=solana2
+WorkingDirectory=/home/kidgordones/0solana/solana2/frontend/apps/dashboard
+EnvironmentFile=/home/kidgordones/0solana/solana2/configs/frontend.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run preview -- --host 0.0.0.0 --port 3001
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
