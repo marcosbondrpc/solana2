@@ -450,7 +450,7 @@ export const HypothesisTesting: React.FC<HypothesisTestingProps> = ({
           </div>
           <div className="text-sm text-zinc-400 mt-1">Coordinated Wallets</div>
           <div className="text-xs text-zinc-500 mt-2">
-            Correlation > 0.6
+            Correlation {'>'} 0.6
           </div>
         </motion.div>
 
