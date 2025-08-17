@@ -1,4 +1,6 @@
-export default function SimpleTable({ columns, rows }: { columns: { key: string; label: string }[]; rows: Record<string, any>[] }) {
+import { ReactNode } from 'react';
+
+export default function SimpleTable({ columns, rows }: { columns: { key: string; label: string }[]; rows: Record<string, ReactNode | string | number | null | undefined>[] }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
       <table className="min-w-full text-sm">
@@ -12,9 +14,10 @@ export default function SimpleTable({ columns, rows }: { columns: { key: string;
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t border-zinc-200 dark:border-zinc-800">
-              {columns.map(c => (
-                <td key={c.key} className="px-3 py-2">{String(r[c.key] ?? '')}</td>
-              ))}
+              {columns.map(c => {
+                const v = r[c.key] as ReactNode | string | number | null | undefined;
+                return <td key={c.key} className="px-3 py-2">{v as ReactNode}</td>;
+              })}
             </tr>
           ))}
         </tbody>
