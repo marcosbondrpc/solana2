@@ -1,0 +1,54 @@
+[workspace]
+members = [
+    "shredstream",
+    "decision-dna",
+    "detection",
+]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+authors = ["MEV Infrastructure Team"]
+license = "MIT"
+
+[workspace.dependencies]
+tokio = { version = "1.41", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "2.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+prometheus = "0.13"
+uuid = { version = "1.11", features = ["v4", "fast-rng", "serde"] }
+chrono = "0.4"
+parking_lot = "0.12"
+dashmap = "6.1"
+crossbeam-channel = "0.5"
+once_cell = "1.20"
+arc-swap = "1.7"
+blake3 = "1.5"
+ed25519-dalek = "2.1"
+rand = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
+overflow-checks = false
+
+[profile.bench]
+inherits = "release"
+
+[[bench]]
+name = "performance"
+harness = false
+path = "benchmarks.rs"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+rand = "0.8"
