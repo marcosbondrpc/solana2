@@ -9,7 +9,11 @@ const MEVDetectionDashboard = lazy(() =>
 
 export default function App() {
   if (!ENABLE_OPS) {
-    return <MEVDetectionDashboard />;
+    return (
+      <Suspense fallback={<div className="loading">Loading...</div>}>
+        <MEVDetectionDashboard />
+      </Suspense>
+    );
   }
   return (
     <BrowserRouter>
