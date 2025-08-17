@@ -1,3 +1,7 @@
+# AI/Development folders - EXCLUDE FROM GIT
+.0kid/
+.roomodes
+
 # Dependencies
 node_modules/
 target/
@@ -42,6 +46,9 @@ coverage/
 *.dll
 *.dylib
 *.exe
+.next/
+out/
+.turbo/
 
 # Data files
 *.parquet

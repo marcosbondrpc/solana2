@@ -1,1 +1,0 @@
-({947:()=>{throw Error("Module parse failed: Unexpected token (3:26)\nYou may need an appropriate loader to handle this file type, currently no loaders are configured to process this file. See https://webpack.js.org/concepts#loaders\n| const COMPRESS_MARK = 0x28;\n| \n> function decodeEnvelope(u8: Uint8Array): any {\n|   return { raw: u8.byteLength };\n| }")}})[947]();
