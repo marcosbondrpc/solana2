@@ -1,5 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import OpsNav from '../components/nav/OpsNav';
+import Breadcrumbs from '../components/layout/Breadcrumbs';
+import ThemeToggle from '../components/ui/ThemeToggle';
 
 export default function OpsLayout() {
   return (
@@ -9,10 +11,12 @@ export default function OpsLayout() {
         <header className="h-14 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4">
           <div className="font-medium">Solana MEV Ops</div>
           <div className="flex items-center gap-2">
-            <button className="text-sm px-3 py-1.5 rounded border border-zinc-300 dark:border-zinc-700">Theme</button>
-            <button className="text-sm px-3 py-1.5 rounded border border-zinc-300 dark:border-zinc-700">Profile</button>
+            <ThemeToggle />
           </div>
         </header>
+        <div className="px-4 pt-3">
+          <Breadcrumbs />
+        </div>
         <main className="p-4">
           <Outlet />
         </main>
