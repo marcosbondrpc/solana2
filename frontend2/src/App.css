@@ -1,42 +1,109 @@
+/* MEV Detection System - Cyberpunk Theme */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00ff41 0%, #00ffff 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00ff41 0%, #00ffff 100%);
+  box-shadow: 0 0 10px #00ff41;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: 0.5;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 65, 0.8);
   }
 }
 
-.card {
-  padding: 2em;
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
 }
 
-.read-the-docs {
-  color: #888;
+/* Utility classes */
+.glass-effect {
+  background: rgba(18, 18, 26, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neon-text {
+  text-shadow: 
+    0 0 10px rgba(0, 255, 65, 0.8),
+    0 0 20px rgba(0, 255, 65, 0.6),
+    0 0 30px rgba(0, 255, 65, 0.4);
+}
+
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* React Flow custom styles */
+.react-flow__node {
+  background: #12121a;
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  color: #ffffff;
+}
+
+.react-flow__edge-path {
+  stroke: #00ff41;
+}
+
+.react-flow__handle {
+  background: #00ffff;
+  border: 2px solid #00ff41;
+}
+
+/* Recharts custom tooltips */
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  background: rgba(18, 18, 26, 0.95) !important;
+  border: 1px solid #00ff41 !important;
+  border-radius: 8px !important;
 }
