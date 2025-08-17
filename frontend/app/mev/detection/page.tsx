@@ -6,29 +6,31 @@ import { ArchetypeRadar } from '@/components/mev/ArchetypeRadar';
 import { EconomicImpactGauge } from '@/components/mev/EconomicImpactGauge';
 import { LatencyHistogram } from '@/components/mev/LatencyHistogram';
 import { MetricsOverview } from '@/components/mev/MetricsOverview';
+import { PerformanceMonitor } from '@/components/mev/PerformanceMonitor';
 import { TimeRangeSelector } from '@/components/ui/TimeRangeSelector';
 import { AlertBanner } from '@/components/ui/AlertBanner';
 import { LoadingState } from '@/components/ui/LoadingState';
 
 export default function DetectionPage() {
   return (
-    <div className="p-6 space-y-6">
-      {/* Security Alert Banner */}
-      <AlertBanner 
-        type="info"
-        message="DEFENSIVE MONITORING ONLY - This dashboard is for security research and MEV detection. No execution capabilities."
-      />
-      
-      {/* Page Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">MEV Detection Overview</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time sandwich attack detection and entity behavior analysis
-          </p>
+    <>
+      <div className="p-6 space-y-6">
+        {/* Security Alert Banner */}
+        <AlertBanner 
+          type="info"
+          message="DEFENSIVE MONITORING ONLY - This dashboard is for security research and MEV detection. No execution capabilities."
+        />
+        
+        {/* Page Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">MEV Detection Overview</h1>
+            <p className="text-muted-foreground mt-1">
+              Real-time sandwich attack detection and entity behavior analysis
+            </p>
+          </div>
+          <TimeRangeSelector />
         </div>
-        <TimeRangeSelector />
-      </div>
       
       {/* Metrics Overview Cards */}
       <Suspense fallback={<LoadingState />}>
@@ -74,6 +76,12 @@ export default function DetectionPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+      
+      {/* Performance Monitor - Always visible */}
+      <Suspense fallback={null}>
+        <PerformanceMonitor />
+      </Suspense>
+    </>
   );
 }
