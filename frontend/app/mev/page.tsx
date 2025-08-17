@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { mevStore, mevActions, startBatchFlushing, stopBatchFlushing } from '../../stores/mevStore';
 import { mevWebSocket } from '../../lib/enhanced-websocket';
 import { useSnapshot } from 'valtio';
@@ -12,10 +15,25 @@ import RiskMonitor from '../../components/mev/RiskMonitor';
 import SystemStatus from '../../components/mev/SystemStatus';
 import ControlPanel from '../../components/mev/ControlPanel';
 
+// Dynamic import of new MEV Dashboard
+const MEVDashboard = dynamic(() => import('../../components/MEVDashboard'), {
+  ssr: false,
+});
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 export default function MEVControlCenter() {
   const store = useSnapshot(mevStore);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [showNewDashboard, setShowNewDashboard] = useState(false);
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -129,6 +147,34 @@ export default function MEVControlCenter() {
   const connectionColor = store.wsStatus === 'connected' ? 'text-green-500' : 
                          store.wsStatus === 'connecting' ? 'text-yellow-500' : 'text-red-500';
 
+  // Show new integrated dashboard if toggled
+  if (showNewDashboard) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Toaster 
+          position="top-right" 
+          theme="dark"
+          toastOptions={{
+            style: {
+              background: '#1a1a1a',
+              color: '#fff',
+              border: '1px solid #333',
+            },
+          }}
+        />
+        <div className="relative">
+          <button
+            onClick={() => setShowNewDashboard(false)}
+            className="absolute top-4 right-4 z-10 px-3 py-1 bg-zinc-900 border border-zinc-800 rounded text-xs hover:bg-zinc-800 transition-colors"
+          >
+            Switch to Classic View
+          </button>
+          <MEVDashboard />
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-4">
       {/* Header */}
@@ -150,6 +196,12 @@ export default function MEVControlCenter() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewDashboard(true)}
+            className="px-3 py-1 bg-green-900 border border-green-700 rounded text-xs hover:bg-green-800 transition-colors"
+          >
+            New Integrated Dashboard
+          </button>
           <button
             onClick={toggleFullscreen}
             className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded text-xs hover:bg-zinc-800 transition-colors"
