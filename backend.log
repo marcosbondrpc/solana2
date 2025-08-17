@@ -1,0 +1,9 @@
+INFO:     Started server process [422873]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8000): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+🚀 Starting Control Plane API on 0.0.0.0:8000
+📚 API Documentation: http://0.0.0.0:8000/docs
+🔗 Allow remote access: http://<your-ip>:8000
