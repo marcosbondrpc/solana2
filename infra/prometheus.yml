@@ -1,0 +1,75 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'mev-monitor'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # API metrics
+  - job_name: 'api'
+    static_configs:
+      - targets: ['api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Integration bridge metrics
+  - job_name: 'bridge'
+    static_configs:
+      - targets: ['bridge:9464']
+    scrape_interval: 5s
+
+  # ClickHouse metrics
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:9363']
+    metrics_path: '/metrics'
+
+  # Redpanda metrics
+  - job_name: 'redpanda'
+    static_configs:
+      - targets: ['redpanda:9644']
+    metrics_path: '/metrics'
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Redis exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Grafana metrics
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Frontend metrics (if exposed)
+  - job_name: 'frontend'
+    static_configs:
+      - targets: ['frontend:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+# Remote write for long-term storage (optional)
+# remote_write:
+#   - url: "http://cortex:9009/api/v1/push"
