@@ -169,7 +169,7 @@ class AutomatedFeedbackLoop:
     
     def __init__(self,
                  clickhouse_host: str = "localhost",
-                 redis_url: str = "redis://localhost:6379",
+                 redis_url: str = "redis://localhost:6390",
                  kafka_bootstrap: str = "localhost:9092",
                  mlflow_uri: str = "http://localhost:5000"):
         

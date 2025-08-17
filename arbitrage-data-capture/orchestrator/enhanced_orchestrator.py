@@ -318,7 +318,7 @@ class SystemDiagnostics:
         
         services = [
             ('clickhouse', 'http://clickhouse:8123/ping'),
-            ('redis', 'redis://redis:6379'),
+            ('redis', 'redis://redis:6390'),
             ('kafka', 'kafka:9092')
         ]
         
@@ -941,7 +941,7 @@ class EnhancedMasterOrchestrator:
                 service_type="cache",
                 priority=ComponentPriority.CRITICAL,
                 performance_tier=PerformanceTier.ULTRA_LOW_LATENCY,
-                health_check_url="redis://redis:6379",
+                health_check_url="redis://redis:6390",
                 restart_policy="always",
                 resource_limits={"memory": "4GB", "cpu": 4},
                 monitoring_config={"track_latency": True, "track_memory": True}
@@ -1116,7 +1116,7 @@ class EnhancedMasterOrchestrator:
             try:
                 # Redis connection with connection pooling
                 self.redis_client = await aioredis.create_redis_pool(
-                    'redis://redis:6379',
+                    'redis://redis:6390',
                     minsize=10,
                     maxsize=50,
                     encoding='utf-8'

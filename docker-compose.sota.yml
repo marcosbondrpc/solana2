@@ -56,7 +56,7 @@ services:
     restart: always
     command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru --save ""
     ports:
-      - "6379:6379"
+      - "6390:6390"
     volumes:
       - redis-data:/data
     networks:
@@ -74,7 +74,7 @@ services:
       - "8001:8001"  # WebSocket
     environment:
       - DATABASE_URL=clickhouse://mev:mev_sota_2024@clickhouse:8123/mev
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6390
       - KAFKA_BROKERS=redpanda:9092
       - SOLANA_RPC=https://api.mainnet-beta.solana.com
       - JITO_BLOCK_ENGINE=https://mainnet.block-engine.jito.wtf
@@ -119,7 +119,7 @@ services:
     container_name: mev-arbitrage-engine
     restart: always
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6390
       - KAFKA_BROKERS=redpanda:9092
       - CLICKHOUSE_URL=http://clickhouse:8123
       - SOLANA_RPC=https://api.mainnet-beta.solana.com
@@ -150,7 +150,7 @@ services:
     container_name: mev-execution-engine
     restart: always
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6390
       - KAFKA_BROKERS=redpanda:9092
       - JITO_BLOCK_ENGINE=https://mainnet.block-engine.jito.wtf
       - SOLANA_RPC=https://api.mainnet-beta.solana.com

@@ -105,7 +105,7 @@ API_WORKERS=4
 KAFKA_BROKERS=localhost:9092
 
 # Redis
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 
 # ClickHouse
 CLICKHOUSE_HOST=localhost

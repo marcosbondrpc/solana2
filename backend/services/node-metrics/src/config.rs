@@ -73,7 +73,7 @@ impl Config {
                 .parse()?,
             
             redis_url: env::var("REDIS_URL")
-                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+                .unwrap_or_else(|_| "redis://127.0.0.1:6390".to_string()),
             
             redis_pool_size: env::var("REDIS_POOL_SIZE")
                 .unwrap_or_else(|_| "100".to_string())

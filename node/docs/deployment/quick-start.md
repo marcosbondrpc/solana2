@@ -127,7 +127,7 @@ CLICKHOUSE_PORT=9000
 CLICKHOUSE_DATABASE=mev
 
 # Redis Configuration
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 
 # API Configuration
 API_PORT=8000

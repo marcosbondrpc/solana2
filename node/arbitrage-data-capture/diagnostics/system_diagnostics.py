@@ -112,7 +112,7 @@ class SystemDiagnostics:
         # Service endpoints
         self.service_endpoints = {
             'clickhouse': 'http://clickhouse:8123',
-            'redis': 'redis://redis:6379',
+            'redis': 'redis://redis:6390',
             'kafka': 'kafka:9092',
             'prometheus': 'http://prometheus:9090',
             'grafana': 'http://grafana:3000',
@@ -482,7 +482,7 @@ class SystemDiagnostics:
     async def _check_cache_performance(self):
         """Check Redis cache performance"""
         try:
-            redis = await aioredis.create_redis_pool('redis://redis:6379')
+            redis = await aioredis.create_redis_pool('redis://redis:6390')
             
             # Get Redis info
             info = await redis.info()

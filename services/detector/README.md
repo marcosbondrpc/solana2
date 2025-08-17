@@ -154,7 +154,7 @@ SOLANA_RPC=https://api.mainnet-beta.solana.com
 SOLANA_WS=wss://api.mainnet-beta.solana.com
 CLICKHOUSE_URL=http://localhost:8123
 DETECTOR_API=http://localhost:8000
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 ```
 
 ### Performance Tuning

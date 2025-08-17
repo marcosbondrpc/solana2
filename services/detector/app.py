@@ -130,7 +130,7 @@ async def lifespan(app: FastAPI):
     # Connect to Redis for caching
     try:
         redis_client = await aioredis.create_redis_pool(
-            'redis://redis:6379',
+            'redis://redis:6390',
             minsize=5,
             maxsize=10
         )

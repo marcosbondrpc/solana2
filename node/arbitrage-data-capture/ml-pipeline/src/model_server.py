@@ -175,7 +175,7 @@ class ModelServer:
         """Initialize Redis cache"""
         try:
             self.redis_client = await aioredis.create_redis_pool(
-                'redis://localhost:6379',
+                'redis://localhost:6390',
                 db=2,
                 encoding='utf-8'
             )

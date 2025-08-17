@@ -215,7 +215,7 @@ VITE_GRAFANA_URL=http://localhost:3000
 CLICKHOUSE_HOST=localhost
 CLICKHOUSE_PORT=8123
 KAFKA_BROKERS=localhost:9092
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 ```
 
 ### ClickHouse Tables Required

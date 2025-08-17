@@ -21,7 +21,7 @@ Access these services from any machine using your server's IP address:
 | **Grafana Dashboard** | http://localhost:3001 | http://45.157.234.184:3001 | admin/admin |
 | **ClickHouse** | http://localhost:8123 | http://45.157.234.184:8123 | default/arbitrage123 |
 | **Prometheus** | http://localhost:9090 | http://45.157.234.184:9090 | - |
-| **Redis** | redis://localhost:6379 | redis://45.157.234.184:6379 | - |
+| **Redis** | redis://localhost:6390 | redis://45.157.234.184:6379 | - |
 | **Kafka** | localhost:9092 | 45.157.234.184:9092 | - |
 | **Zookeeper** | localhost:2181 | 45.157.234.184:2181 | - |
 

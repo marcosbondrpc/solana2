@@ -33,7 +33,7 @@ const CONFIG = {
   CLICKHOUSE_USER: process.env.CLICKHOUSE_USER || 'solana',
   CLICKHOUSE_PASSWORD: process.env.CLICKHOUSE_PASSWORD || 'mev_billions_2025',
   CLICKHOUSE_DATABASE: process.env.CLICKHOUSE_DATABASE || 'solana_history',
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6390',
   CONCURRENCY: parseInt(process.env.CONCURRENCY || '100'),
   BATCH_SIZE: parseInt(process.env.BATCH_SIZE || '100'),
   START_SLOT: parseInt(process.env.START_SLOT || '0'),

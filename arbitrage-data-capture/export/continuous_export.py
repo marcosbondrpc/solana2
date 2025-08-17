@@ -746,7 +746,7 @@ class ContinuousExportScheduler:
         """Initialize external connections"""
         try:
             self.redis_client = await aioredis.create_redis_pool(
-                'redis://redis:6379',
+                'redis://redis:6390',
                 minsize=2,
                 maxsize=10
             )

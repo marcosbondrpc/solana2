@@ -35,7 +35,7 @@ impl Default for Config {
             mempool_scan_interval_ms: 10,
             opportunity_scan_interval_ms: 5,
             clickhouse_url: "http://localhost:8123".to_string(),
-            redis_url: "redis://localhost:6379".to_string(),
+            redis_url: "redis://localhost:6390".to_string(),
             kafka_brokers: vec!["localhost:9092".to_string()],
         }
     }

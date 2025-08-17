@@ -724,7 +724,7 @@ async fn main() -> Result<()> {
         clickhouse_url: std::env::var("CLICKHOUSE_URL")
             .unwrap_or_else(|_| "http://localhost:8123".to_string()),
         redis_url: std::env::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://localhost:6379".to_string()),
+            .unwrap_or_else(|_| "redis://localhost:6390".to_string()),
         kafka_brokers: std::env::var("KAFKA_BROKERS")
             .unwrap_or_else(|_| "localhost:9092".to_string())
             .split(',')

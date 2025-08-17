@@ -182,7 +182,7 @@ class HealthMonitor:
             ),
             HealthCheckConfig(
                 service_name="redis",
-                endpoint="redis://redis:6379",
+                endpoint="redis://redis:6390",
                 interval_seconds=10,
                 latency_warning_ms=50,
                 latency_critical_ms=200
@@ -260,7 +260,7 @@ class HealthMonitor:
         try:
             # Redis connection
             self.redis_client = await aioredis.create_redis_pool(
-                'redis://redis:6379',
+                'redis://redis:6390',
                 minsize=2,
                 maxsize=10
             )

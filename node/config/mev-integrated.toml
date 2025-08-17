@@ -15,7 +15,7 @@ retry_delay_ms = 100
 
 [redis]
 host = "${REDIS_HOST:-localhost}"
-port = 6379
+port = 6390
 password = "${REDIS_PASSWORD:-changeme}"
 max_connections = 100
 connection_timeout_ms = 1000

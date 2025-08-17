@@ -104,7 +104,7 @@ async def startup():
     global redis_client, clickhouse_client, websocket_manager
     
     redis_client = await redis.from_url(
-        "redis://localhost:6379",
+        "redis://localhost:6390",
         encoding='utf-8',
         decode_responses=True
     )

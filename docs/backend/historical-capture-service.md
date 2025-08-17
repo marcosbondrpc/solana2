@@ -238,7 +238,7 @@ pytest tests/ -v
 
 ## Environment Variables
 
-- `REDIS_URL`: Redis connection string (default: `redis://localhost:6379`)
+- `REDIS_URL`: Redis connection string (default: `redis://localhost:6390`)
 - `RPC_ENDPOINT`: Solana RPC endpoint (default: mainnet-beta)
 - `LOG_LEVEL`: Logging level (INFO, DEBUG, WARNING, ERROR)
 - `MAX_CONNECTIONS`: Maximum RPC connections (default: 100)

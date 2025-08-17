@@ -132,7 +132,7 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-mev_secure_password}
       KAFKA_BROKERS: redpanda:9092
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis:6390
       PROMETHEUS_MULTIPROC_DIR: /tmp
       LOG_LEVEL: info
     volumes:

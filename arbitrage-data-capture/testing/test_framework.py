@@ -260,7 +260,7 @@ class IntegrationTestSuite(TestSuite):
     async def _test_redis_connectivity(self) -> Dict[str, Any]:
         """Test Redis connectivity"""
         try:
-            redis = await aioredis.create_redis_pool('redis://redis:6379')
+            redis = await aioredis.create_redis_pool('redis://redis:6390')
             
             # Test basic operations
             await redis.set('test_key', 'test_value')

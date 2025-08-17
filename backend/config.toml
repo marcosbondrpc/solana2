@@ -8,7 +8,7 @@ bundle_timeout_ms = 50
 mempool_scan_interval_ms = 10
 opportunity_scan_interval_ms = 5
 clickhouse_url = "http://localhost:8123"
-redis_url = "redis://localhost:6379"
+redis_url = "redis://localhost:6390"
 kafka_brokers = ["localhost:9092"]
 
 [jito_config]

@@ -89,7 +89,7 @@ class Query:
 async def lifespan(app: FastAPI):
     # Startup
     app.state.redis = await aioredis.create_redis_pool(
-        'redis://localhost:6379',
+        'redis://localhost:6390',
         encoding='utf-8',
         minsize=5,
         maxsize=20

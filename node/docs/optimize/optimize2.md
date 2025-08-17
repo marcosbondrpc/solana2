@@ -228,7 +228,7 @@ class Settings(BaseSettings):
     JWT_ISS: str = "defi-dashboard"
     JWT_AUD: str = "defi-users"
     KAFKA: str = "localhost:9092"
-    REDIS: str = "redis://localhost:6379/0"
+    REDIS: str = "redis://localhost:6390/0"
     CLICKHOUSE_HOST: str = "localhost"
     CLICKHOUSE_DB: str = "default"
     class Config: env_file = ".env"
@@ -415,7 +415,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 import os
 
-redis_broker = RedisBroker(url=os.getenv("REDIS_URL","redis://localhost:6379/0"))
+redis_broker = RedisBroker(url=os.getenv("REDIS_URL","redis://localhost:6390/0"))
 dramatiq.set_broker(redis_broker)
 ```
 
@@ -423,7 +423,7 @@ dramatiq.set_broker(redis_broker)
 
 ```python
 import redis, os, time
-R = redis.Redis.from_url(os.getenv("REDIS_URL","redis://localhost:6379/0"), decode_responses=True)
+R = redis.Redis.from_url(os.getenv("REDIS_URL","redis://localhost:6390/0"), decode_responses=True)
 
 def progress(job_id:str, p:float, msg:str=""):
     R.hset(job_id, mapping={"state":"running","progress":f"{p:.4f}","message":msg, "ts":str(int(time.time()))})
@@ -584,7 +584,7 @@ After=network-online.target redis-server.service kafka.service clickhouse-server
 [Service]
 WorkingDirectory=/home/kidgordones/0solana/node/api
 Environment=PYTHONUNBUFFERED=1
-Environment=REDIS_URL=redis://localhost:6379/0
+Environment=REDIS_URL=redis://localhost:6390/0
 Environment=CLICKHOUSE_HOST=localhost
 Environment=CLICKHOUSE_DB=default
 Environment=KAFKA=localhost:9092
@@ -605,7 +605,7 @@ After=redis-server.service clickhouse-server.service
 
 [Service]
 WorkingDirectory=/home/kidgordones/0solana/node
-Environment=REDIS_URL=redis://localhost:6379/0
+Environment=REDIS_URL=redis://localhost:6390/0
 Environment=CLICKHOUSE_HOST=localhost
 Environment=CLICKHOUSE_DB=default
 ExecStart=/usr/bin/dramatiq workers.tasks_scrape workers.tasks_train --processes 2 --threads 4

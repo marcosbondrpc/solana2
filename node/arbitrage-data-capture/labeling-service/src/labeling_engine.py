@@ -775,7 +775,7 @@ async def main():
         'clickhouse_host': 'localhost',
         'clickhouse_port': 9000,
         'clickhouse_db': 'solana_arbitrage',
-        'redis_url': 'redis://localhost:6379',
+        'redis_url': 'redis://localhost:6390',
         'kafka_brokers': ['localhost:9092'],
     }
     

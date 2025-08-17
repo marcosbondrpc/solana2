@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Load configuration
     dotenv::dotenv().ok();
-    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6390".to_string());
     let rpc_endpoints: Vec<String> = std::env::var("RPC_ENDPOINTS")
         .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
         .split(',')

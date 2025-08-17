@@ -78,7 +78,7 @@ class PerformanceMonitor:
 class RedisCache:
     """Redis-based caching for job management and RPC responses"""
     
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, redis_url: str = "redis://localhost:6390"):
         self.redis_url = redis_url
         self.redis: Optional[aioredis.Redis] = None
         

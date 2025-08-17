@@ -80,7 +80,7 @@ impl Config {
                 .parse()?,
             
             redis_url: env::var("REDIS_URL")
-                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+                .unwrap_or_else(|_| "redis://127.0.0.1:6390".to_string()),
             
             kafka_brokers: env::var("KAFKA_BROKERS")
                 .unwrap_or_else(|_| "localhost:9092".to_string()),

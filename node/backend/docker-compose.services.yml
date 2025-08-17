@@ -15,7 +15,7 @@ services:
       - WS_ENDPOINTS=${WS_ENDPOINTS:-ws://solana-rpc:8900}
       - GEYSER_ENDPOINTS=${GEYSER_ENDPOINTS:-grpc://geyser:10000}
       - JITO_ENDPOINTS=${JITO_ENDPOINTS:-grpc://jito:8008}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6390
       - CLICKHOUSE_URL=http://clickhouse:8123
       - WS_PORT=8081
       - METRICS_PORT=9090
@@ -49,7 +49,7 @@ services:
       - API_PORT=8082
       - CLICKHOUSE_URL=http://clickhouse:8123
       - CLICKHOUSE_DATABASE=solana_data
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6390
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_TOPIC_PROGRESS=scrapper-progress
       - SCRAPPER_WORKERS=16

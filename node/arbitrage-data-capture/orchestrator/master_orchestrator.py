@@ -163,7 +163,7 @@ class MasterOrchestrator:
                 name="redis",
                 service_type="cache",
                 priority=ComponentPriority.CRITICAL,
-                health_check_url="redis://redis:6379",
+                health_check_url="redis://redis:6390",
                 restart_policy="always",
                 resource_limits={"memory": "2GB", "cpu": 2}
             ),
@@ -290,7 +290,7 @@ class MasterOrchestrator:
         try:
             # Redis connection
             self.redis_client = await aioredis.create_redis_pool(
-                'redis://redis:6379',
+                'redis://redis:6390',
                 minsize=5,
                 maxsize=20
             )

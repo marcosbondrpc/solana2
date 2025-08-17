@@ -40,7 +40,7 @@ async def get_redis() -> Optional[redis.Redis]:
     global redis_client
     if redis_client is None and os.getenv("REDIS_URL"):
         redis_client = await redis.from_url(
-            os.getenv("REDIS_URL", "redis://localhost:6379"),
+            os.getenv("REDIS_URL", "redis://localhost:6390"),
             decode_responses=True,
             socket_keepalive=True,
             socket_connect_timeout=2,

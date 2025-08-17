@@ -104,7 +104,7 @@ docker compose -f docker-compose.integrated.yml down
 | Service | Port | URL | Purpose |
 |---------|------|-----|---------|
 | **ClickHouse** | 8123 | http://localhost:8123 | Time-series MEV data storage |
-| **Redis** | 6379 | redis://localhost:6379 | Cache and state management |
+| **Redis** | 6379 | redis://localhost:6390 | Cache and state management |
 | **Kafka** | 9092 | localhost:9092 | Event streaming |
 | **Prometheus** | 9090 | http://localhost:9090 | Metrics collection |
 | **Grafana** | 3001 | http://localhost:3001 | Monitoring dashboards |

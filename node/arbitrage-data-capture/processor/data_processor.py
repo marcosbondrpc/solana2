@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ProcessingConfig:
     """Configuration for data processing"""
-    redis_url: str = "redis://localhost:6379"
+    redis_url: str = "redis://localhost:6390"
     cache_ttl: int = 300  # 5 minutes
     window_size: int = 1000  # For rolling calculations
     batch_size: int = 100

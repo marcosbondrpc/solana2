@@ -148,7 +148,7 @@ class RealTimeMonitor:
     """Ultra-high-performance real-time monitoring system"""
     
     def __init__(self, 
-                 redis_url: str = "redis://localhost:6379",
+                 redis_url: str = "redis://localhost:6390",
                  kafka_bootstrap: str = "localhost:9092",
                  clickhouse_host: str = "localhost"):
         

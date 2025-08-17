@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/v1/provisioning", tags=["provisioning"])
 GRAFANA_URL = os.getenv("GRAFANA_URL", "http://localhost:3000")
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
 CLICKHOUSE_URL = os.getenv("CLICKHOUSE_URL", "http://localhost:8123")
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6390")
 KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "localhost:9092")
 
 # Redis client for caching

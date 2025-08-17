@@ -215,7 +215,7 @@ class ConnectionPoolManager:
         
         # Redis pool
         self.pools['redis'] = await aioredis.create_redis_pool(
-            'redis://localhost:6379',
+            'redis://localhost:6390',
             minsize=self.pool_configs['redis']['min_size'],
             maxsize=self.pool_configs['redis']['max_size'],
             encoding='utf-8'

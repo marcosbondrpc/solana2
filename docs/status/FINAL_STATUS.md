@@ -38,7 +38,7 @@ sudo make dev
   - Password: `admin`
 - **ClickHouse**: http://localhost:8123
 - **Prometheus**: http://localhost:9090
-- **Redis**: `redis://localhost:6379`
+- **Redis**: `redis://localhost:6390`
 
 ### Development Commands
 
@@ -115,7 +115,7 @@ SOLANA_WS_URL=wss://api.mainnet-beta.solana.com
 # Database Configuration
 CLICKHOUSE_HOST=localhost
 CLICKHOUSE_PORT=9000
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6390
 ```
 
 ## 📊 System Test Results

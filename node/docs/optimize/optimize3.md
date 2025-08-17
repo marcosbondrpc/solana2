@@ -463,8 +463,8 @@ async def _start():
 import os
 from celery import Celery
 
-BROKER = os.getenv("CELERY_BROKER_URL","redis://localhost:6379/1")
-BACKEND = os.getenv("CELERY_RESULT_BACKEND","redis://localhost:6379/1")
+BROKER = os.getenv("CELERY_BROKER_URL","redis://localhost:6390/1")
+BACKEND = os.getenv("CELERY_RESULT_BACKEND","redis://localhost:6390/1")
 
 app = Celery("legendary", broker=BROKER, backend=BACKEND, include=["workers.tasks_scrape","workers.tasks_train"])
 app.conf.update(
@@ -689,9 +689,9 @@ After=redis-server.service clickhouse-server.service
 
 [Service]
 WorkingDirectory=/home/kidgordones/0solana/node
-Environment=REDIS_URL=redis://localhost:6379/1
-Environment=CELERY_BROKER_URL=redis://localhost:6379/1
-Environment=CELERY_RESULT_BACKEND=redis://localhost:6379/1
+Environment=REDIS_URL=redis://localhost:6390/1
+Environment=CELERY_BROKER_URL=redis://localhost:6390/1
+Environment=CELERY_RESULT_BACKEND=redis://localhost:6390/1
 Environment=CLICKHOUSE_HOST=localhost
 Environment=CLICKHOUSE_DB=default
 ExecStart=/usr/bin/celery -A workers.celery_app worker --loglevel=INFO --concurrency=8 --prefetch-multiplier=1
@@ -710,8 +710,8 @@ After=redis-server.service
 
 [Service]
 WorkingDirectory=/home/kidgordones/0solana/node
-Environment=CELERY_BROKER_URL=redis://localhost:6379/1
-Environment=CELERY_RESULT_BACKEND=redis://localhost:6379/1
+Environment=CELERY_BROKER_URL=redis://localhost:6390/1
+Environment=CELERY_RESULT_BACKEND=redis://localhost:6390/1
 ExecStart=/usr/bin/celery -A workers.celery_app beat --loglevel=INFO
 Restart=always
 
