@@ -24,6 +24,9 @@ from routes.training import router as training_router
 from routes.control import router as control_router
 from routes.realtime import router as realtime_router
 
+# Import defensive services
+from defensive_integration import router as defensive_router
+
 # Import services
 from services.clickhouse_client import initialize_clickhouse
 from services.kafka_bridge import initialize_kafka_bridge
@@ -263,6 +266,7 @@ app.include_router(clickhouse_router, prefix="/clickhouse", tags=["clickhouse"])
 app.include_router(training_router, prefix="/training", tags=["training"])
 app.include_router(control_router, prefix="/control", tags=["control"])
 app.include_router(realtime_router, prefix="/realtime", tags=["realtime"])
+app.include_router(defensive_router, prefix="/defensive", tags=["defensive"])
 
 
 # Exception handlers
