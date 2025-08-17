@@ -34,11 +34,11 @@ describe('Ops pages smoke', () => {
   });
   it('renders Node page', () => {
     renderRoute('/ops/node');
-    expect(screen.getByText(/Node|TPS|Latency/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Node|TPS|Latency/i).length).toBeGreaterThan(0);
   });
   it('renders Scraper page', () => {
     renderRoute('/ops/scraper');
-    expect(screen.getByText(/Running Jobs|Filters|Jobs/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Running Jobs|Filters|Jobs/i).length).toBeGreaterThan(0);
   });
   it('renders Arbitrage page', () => {
     renderRoute('/ops/arbitrage');
