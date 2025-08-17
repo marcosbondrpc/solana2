@@ -1,14 +1,14 @@
 'use client';
 
 import { Suspense } from 'react';
-import { SandwichDetectionFeed } from '@/components/mev/sandwich-detection-feed';
-import { ArchetypeRadar } from '@/components/mev/archetype-radar';
-import { EconomicImpactGauge } from '@/components/mev/economic-impact-gauge';
-import { LatencyHistogram } from '@/components/mev/latency-histogram';
-import { MetricsOverview } from '@/components/mev/metrics-overview';
-import { TimeRangeSelector } from '@/components/ui/time-range-selector';
-import { AlertBanner } from '@/components/ui/alert-banner';
-import { LoadingState } from '@/components/ui/loading-state';
+import { SandwichDetectionFeed } from '@/components/mev/SandwichDetectionFeed';
+import { ArchetypeRadar } from '@/components/mev/ArchetypeRadar';
+import { EconomicImpactGauge } from '@/components/mev/EconomicImpactGauge';
+import { LatencyHistogram } from '@/components/mev/LatencyHistogram';
+import { MetricsOverview } from '@/components/mev/MetricsOverview';
+import { TimeRangeSelector } from '@/components/ui/TimeRangeSelector';
+import { AlertBanner } from '@/components/ui/AlertBanner';
+import { LoadingState } from '@/components/ui/LoadingState';
 
 export default function DetectionPage() {
   return (
