@@ -1,9 +1,9 @@
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ENABLE_OPS } from './flags';
 import OpsLayout from './layouts/OpsLayout';
 import { OpsHome, NodePage, ScraperPage, ArbitragePage, MevPage, StatsPage, ConfigPage } from './routes/ops/routes';
-import { MEVDetectionDashboard } from './pages/MEVDetectionDashboard';
+const MEVDetectionDashboard = lazy(() => import('./pages/MEVDetectionDashboard'));
 
 export default function App() {
   if (!ENABLE_OPS) {

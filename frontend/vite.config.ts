@@ -4,7 +4,6 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import { VitePWA } from 'vite-plugin-pwa';
 import viteCompression from 'vite-plugin-compression';
-import { terser } from 'rollup-plugin-terser';
 import replace from '@rollup/plugin-replace';
 
 export default defineConfig({
