@@ -4,7 +4,7 @@
 
 ### 1. MEV Control Center Dashboard
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/MEVControlCenter.tsx`
-**Target**: `/frontend2/src/components/MEVControlCenter.tsx`
+**Target**: `/frontend/src/components/MEVControlCenter.tsx`
 
 **Features to Add**:
 - Real-time system health monitoring (ClickHouse, Kafka, Grafana status)
@@ -25,7 +25,7 @@ WS ws://localhost:8001/api/realtime/ws
 
 ### 2. ClickHouse Query Builder
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/ClickHouseQueryBuilder.tsx`
-**Target**: `/frontend2/src/components/ClickHouseQueryBuilder.tsx`
+**Target**: `/frontend/src/components/ClickHouseQueryBuilder.tsx`
 
 **Features to Add**:
 - Visual query builder with drag-and-drop
@@ -45,7 +45,7 @@ GET http://localhost:8001/api/clickhouse/schema
 
 ### 3. Grafana Dashboard Provisioning
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/GrafanaProvisioning.tsx`
-**Target**: `/frontend2/src/components/GrafanaProvisioning.tsx`
+**Target**: `/frontend/src/components/GrafanaProvisioning.tsx`
 
 **Features to Add**:
 - One-click provisioning of all dashboards
@@ -65,7 +65,7 @@ GET http://localhost:8001/api/clickhouse/schema
 
 ### 4. Protobuf Monitor
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/ProtobufMonitor.tsx`
-**Target**: `/frontend2/src/components/ProtobufMonitor.tsx`
+**Target**: `/frontend/src/components/ProtobufMonitor.tsx`
 
 **Features to Add**:
 - Real-time protobuf message decoding
@@ -83,7 +83,7 @@ ws.binaryType = 'arraybuffer';
 
 ### 5. Bandit Dashboard
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/bandit/BanditDashboard.tsx`
-**Target**: `/frontend2/src/components/bandit/BanditDashboard.tsx`
+**Target**: `/frontend/src/components/bandit/BanditDashboard.tsx`
 
 **Features to Add**:
 - Multi-armed bandit visualization
@@ -96,7 +96,7 @@ ws.binaryType = 'arraybuffer';
 
 ### 6. Decision DNA Visualizer
 **Source**: `/arbitrage-data-capture/defi-frontend/src/components/dna/DecisionDNA.tsx`
-**Target**: `/frontend2/src/components/dna/DecisionDNA.tsx`
+**Target**: `/frontend/src/components/dna/DecisionDNA.tsx`
 
 **Features to Add**:
 - Cryptographic hash chain visualization
@@ -108,7 +108,7 @@ ws.binaryType = 'arraybuffer';
 
 ### 7. WebSocket Libraries
 **Source**: `/arbitrage-data-capture/defi-frontend/lib/`
-**Target**: `/frontend2/src/lib/`
+**Target**: `/frontend/src/lib/`
 
 **Files to Copy**:
 - `ws.ts` - High-performance WebSocket client (100k+ msg/sec)
@@ -124,7 +124,7 @@ ws.binaryType = 'arraybuffer';
 
 ### 8. Worker Scripts
 **Source**: `/arbitrage-data-capture/defi-frontend/workers/`
-**Target**: `/frontend2/public/workers/`
+**Target**: `/frontend/public/workers/`
 
 **Files to Copy**:
 - `wsDecoder.worker.ts` - Parallel WebSocket decoding
@@ -132,7 +132,7 @@ ws.binaryType = 'arraybuffer';
 
 ### 9. Stores and State Management
 **Source**: `/arbitrage-data-capture/defi-frontend/stores/`
-**Target**: `/frontend2/src/stores/`
+**Target**: `/frontend/src/stores/`
 
 **Files to Integrate**:
 - `feed.ts` - Real-time data feed management
@@ -140,7 +140,7 @@ ws.binaryType = 'arraybuffer';
 ## API Endpoint Configuration
 
 Create new configuration file:
-`/frontend2/src/config/arbitrage-api.ts`
+`/frontend/src/config/arbitrage-api.ts`
 
 ```typescript
 export const ARBITRAGE_API = {
@@ -290,7 +290,7 @@ Add to `package.json`:
 # Frontend component migration script
 
 SOURCE="/home/kidgordones/0solana/node/arbitrage-data-capture/defi-frontend"
-TARGET="/home/kidgordones/0solana/node/frontend2"
+TARGET="/home/kidgordones/0solana/node/frontend"
 
 # Copy components
 cp -r $SOURCE/src/components/* $TARGET/src/components/

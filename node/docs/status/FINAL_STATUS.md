@@ -44,7 +44,7 @@ sudo make dev
 
 #### Frontend Development
 ```bash
-cd frontend2
+cd frontend
 npm install
 npm run dev
 # Access at http://localhost:3000
@@ -135,7 +135,7 @@ Run `./test-system.sh` to verify:
 
 2. **Build Frontend**
    ```bash
-   cd frontend2
+   cd frontend
    npm install
    npm run dev
    ```

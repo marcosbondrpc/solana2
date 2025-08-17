@@ -47,7 +47,7 @@ sudo docker compose -f arbitrage-data-capture/docker-compose.yml restart
 
 ### 2. Frontend Dashboard
 ```bash
-cd frontend2
+cd frontend
 npm install
 npm run dev
 # Will be accessible at http://45.157.234.184:3000

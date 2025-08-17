@@ -195,15 +195,15 @@ EOF
 ```bash
 # 1. Copy frontend components
 cp -r /home/kidgordones/0solana/node/arbitrage-data-capture/defi-frontend/src/components/* \
-      /home/kidgordones/0solana/node/frontend2/src/components/
+      /home/kidgordones/0solana/node/frontend/src/components/
 
 # 2. Copy WebSocket libraries
 cp -r /home/kidgordones/0solana/node/arbitrage-data-capture/defi-frontend/lib/* \
-      /home/kidgordones/0solana/node/frontend2/src/lib/
+      /home/kidgordones/0solana/node/frontend/src/lib/
 
 # 3. Copy worker scripts
 cp -r /home/kidgordones/0solana/node/arbitrage-data-capture/defi-frontend/workers/* \
-      /home/kidgordones/0solana/node/frontend2/public/workers/
+      /home/kidgordones/0solana/node/frontend/public/workers/
 
 # 4. Update API endpoints in frontend config
 # Point to new control plane API on port 8001
