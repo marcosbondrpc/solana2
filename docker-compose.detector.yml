@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  detector:
+    build:
+      context: ./services/detector
+      dockerfile: Dockerfile
+    container_name: mev-detector
+    restart: unless-stopped
+    ports:
+      - "8800:8800"
+    environment:
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=9000
+      - REDIS_URL=redis://redis:6379
+      - DETECT_ONLY=1
+      - DRY_RUN=1
+      - SIMULATION_MODE=1
+      - MODEL_PATH=/app/models
+      - CONFIG_PATH=/app/configs/entities.yaml
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./models:/app/models:ro
+      - ./configs:/app/configs:ro
+      - ./logs/detector:/app/logs
+    networks:
+      - mev-network
+    depends_on:
+      - clickhouse
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8800/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: mev-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9000:9000"  # Native protocol
+    environment:
+      - CLICKHOUSE_DB=ch
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_MAX_MEMORY_USAGE=8000000000
+      - CLICKHOUSE_MAX_MEMORY_USAGE_FOR_USER=8000000000
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./sql/ddl:/docker-entrypoint-initdb.d:ro
+      - ./clickhouse/config.xml:/etc/clickhouse-server/config.d/config.xml:ro
+    networks:
+      - mev-network
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  redis:
+    image: redis:7-alpine
+    container_name: mev-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - mev-network
+
+  # Inference pipeline workers
+  inference-worker:
+    build:
+      context: ./services/detector
+      dockerfile: Dockerfile.worker
+    container_name: mev-inference-worker
+    restart: unless-stopped
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - REDIS_URL=redis://redis:6379
+      - WORKER_TYPE=inference
+      - BATCH_SIZE=64
+      - NUM_WORKERS=4
+    volumes:
+      - ./models:/app/models:ro
+      - ./configs:/app/configs:ro
+    networks:
+      - mev-network
+    depends_on:
+      - clickhouse
+      - redis
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  # Behavioral analysis worker
+  behavior-worker:
+    build:
+      context: ./services/detector
+      dockerfile: Dockerfile.worker
+    container_name: mev-behavior-worker
+    restart: unless-stopped
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - REDIS_URL=redis://redis:6379
+      - WORKER_TYPE=behavior
+      - ANALYSIS_INTERVAL=300  # 5 minutes
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./reports:/app/reports
+    networks:
+      - mev-network
+    depends_on:
+      - clickhouse
+      - redis
+
+networks:
+  mev-network:
+    driver: bridge
+
+volumes:
+  clickhouse-data:
+  redis-data:

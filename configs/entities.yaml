@@ -1,0 +1,160 @@
+entities:
+  # High-volume MEV entities to track
+  focus_wallets:
+    - B91piBSfCBRs5rUxCMRdJEGv7tNEnFxweWcdQJHJoFpi
+    - 6gAnjderE13TGGFeqdPVQ438jp2FPVeyXAszxKu9y338
+    - CaCZgxpiEDZtCgXABN9X8PTwkRk81Y9PKdc6s66frH7q
+    - D9Akv6CQyExvjtEA22g6AAEgCs4GYWzxVoC5UA4fWXEC
+    - E6YoRP3adE5XYneSseLee15wJshDxCsmyD2WtLvAmfLi
+    - GGG4BBhgAYKXwjpHjTJyKXWaUnPnHvJ5fnXpG1jvZcNQ
+    - EAJ1DPoYR9GhaBbSWHmFiyAtssy8Qi7dPvTzBdwkCYMW
+    - 2brXWR3RYHXsAcbo58LToDV9KVd7D2dyH9iP3qa9PZTy
+    
+  # Venues to monitor for MEV activity
+  venues:
+    # Raydium AMM
+    - CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C
+    - 675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
+    
+    # Pump.fun
+    - pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA
+    - 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+    
+    # Jupiter Aggregator
+    - JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4
+    - JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB
+    
+    # Orca Whirlpools
+    - whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc
+    - 9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP
+    
+    # Serum/OpenBook
+    - 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin
+    - srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX
+
+  # Known bot clusters (for detection validation)
+  bot_clusters:
+    cluster_1:
+      - H4NQwPfAHRkBN2jNhWQiztRNxaL3qxsMNfLvN6dGVDRn
+      - 7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5
+      - CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz
+    
+    cluster_2:
+      - Gx43NwNpyqVKBiMEJBJGYZ7Ck5xt7fYqwdmKWLhKKFGc
+      - 8cypMvwH8HKjqDquYGPmfXbYZW8LYbXcUYfWTm7AxQhT
+      - B4Bz3CkQ5uEsrfDbeB3MwZYxgwaNGGpe5sJGE4FbLdPa
+
+# Detection thresholds
+thresholds:
+  sandwich:
+    min_confidence: 0.75
+    min_ensemble_score: 0.6
+    max_slot_distance: 3
+    min_price_impact: 0.001  # 0.1%
+  
+  backrun:
+    min_confidence: 0.7
+    max_response_ms: 500
+  
+  liquidation:
+    min_confidence: 0.8
+    health_factor_threshold: 1.05
+
+# Behavioral profiling settings
+behavior:
+  surgical_threshold: 0.7  # Score above this = surgical attacker
+  shotgun_threshold: 0.7   # Score above this = shotgun attacker
+  
+  victim_classification:
+    retail_max_sol: 100
+    whale_min_sol: 10000
+    bot_tx_per_day: 100
+  
+  risk_levels:
+    low: 0.3
+    medium: 0.6
+    high: 0.9
+
+# Model configuration
+models:
+  gnn:
+    hidden_dim: 256
+    num_layers: 4
+    dropout: 0.2
+    learning_rate: 0.001
+  
+  transformer:
+    d_model: 256
+    nhead: 8
+    num_layers: 4
+    dim_feedforward: 1024
+    max_seq_len: 128
+  
+  ensemble:
+    weights:
+      gnn: 0.4
+      transformer: 0.4
+      heuristic: 0.2
+
+# ClickHouse settings
+clickhouse:
+  host: clickhouse
+  port: 9000
+  database: ch
+  
+  retention:
+    raw_tx: 90  # days
+    candidates: 180
+    entity_profiles: 365
+    decision_dna: 365
+  
+  aggregation:
+    entity_window: 7  # days for materialized views
+    metrics_window: 24  # hours for performance metrics
+
+# Detection service settings
+service:
+  host: 0.0.0.0
+  port: 8800
+  workers: 4
+  
+  inference:
+    batch_size: 32
+    max_concurrent: 100
+    timeout_ms: 500
+  
+  cache:
+    redis_host: redis
+    redis_port: 6379
+    ttl_seconds: 300
+
+# Monitoring and alerting
+monitoring:
+  metrics_interval: 60  # seconds
+  
+  alerts:
+    high_fpr:
+      threshold: 0.01  # 1% false positive rate
+      window: 3600  # 1 hour
+    
+    low_auc:
+      threshold: 0.9
+      window: 3600
+    
+    high_latency:
+      p99_threshold_us: 500
+      window: 300  # 5 minutes
+
+# Feature flags
+features:
+  enable_gnn: true
+  enable_transformer: true
+  enable_heuristics: true
+  enable_dna_tracking: true
+  enable_entity_clustering: true
+  enable_behavioral_profiling: true
+  
+  # Detection-only flags (no execution)
+  detection_only: true
+  dry_run: true
+  simulation_mode: true

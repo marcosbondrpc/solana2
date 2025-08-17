@@ -1,7 +1,8 @@
 .PHONY: fe2 fe2-build fe2-start legendary lab-smoke-test tmux health-check \
         train-model models-super pgo-mev swap-model emergency-stop throttle audit-trail \
         historical-infra historical-start historical-stop historical-ingester historical-backfill \
-        historical-test historical-stats historical-clean proto pgo-collect pgo-build
+        historical-test historical-stats historical-clean proto pgo-collect pgo-build \
+        detect-train detect-serve behavior-report detect-infra detect-test detect-clean
 
 # Frontend Commands
 fe2:
@@ -195,6 +196,55 @@ arb-scan:
 arb-execute:
 	@echo "💰 Executing arbitrage opportunities..."
 	@curl -X POST http://localhost:8000/api/arbitrage/execute
+
+# MEV Detection Operations (DETECTION-ONLY)
+detect-train:
+	@echo "🧠 Training MEV detection models..."
+	@echo "Training GNN for graph-based detection..."
+	@cd services/detector && python3 train_gnn.py
+	@echo "Training Transformer for sequence analysis..."
+	@cd services/detector && python3 train_transformer.py
+	@echo "✅ Models trained successfully"
+
+detect-serve:
+	@echo "🚀 Starting detection service (DETECTION-ONLY)..."
+	@cd services/detector && uvicorn app:app --host 0.0.0.0 --port 8800 --workers 4 --loop uvloop
+
+detect-infra:
+	@echo "🏗️ Setting up detection infrastructure..."
+	@docker-compose -f docker-compose.detector.yml up -d
+	@sleep 10
+	@echo "Initializing ClickHouse schemas..."
+	@clickhouse-client --host localhost --port 9000 < sql/ddl/detection_schema.sql
+	@echo "✅ Detection infrastructure ready"
+
+detect-test:
+	@echo "🧪 Testing detection system..."
+	@curl -s http://localhost:8800/health | jq .
+	@echo "Testing inference endpoint..."
+	@curl -X POST http://localhost:8800/infer \
+		-H "Content-Type: application/json" \
+		-d '{"transactions": [{"slot": 1000, "sig": "test", "payer": "test", "programs": [], "ix_kinds": [], "accounts": []}]}'
+	@echo "✅ Detection tests passed"
+
+behavior-report:
+	@echo "📊 Generating behavioral report for entity..."
+	@cd services/detector && python3 entity_analyzer.py $(ENTITY) reports/$(ENTITY)_report.json
+
+detect-clean:
+	@echo "🧹 Cleaning detection data..."
+	@docker-compose -f docker-compose.detector.yml down -v
+	@rm -rf services/detector/__pycache__
+	@rm -rf models/*.onnx models/*.pth
+	@echo "✅ Detection environment cleaned"
+
+detect-metrics:
+	@echo "📈 Detection system metrics..."
+	@curl -s http://localhost:8800/metrics | jq .
+
+detect-profile:
+	@echo "🔍 Getting entity profile..."
+	@curl -s http://localhost:8800/profile/$(ENTITY) | jq .
 
 # Thompson Sampling Operations
 thompson-stats:
