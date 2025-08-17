@@ -4,21 +4,26 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.41", features = ["full", "rt-multi-thread", "parking_lot", "stats"] }
+tokio = { version = "1.41", features = ["full", "rt-multi-thread", "parking_lot", "stats", "io-util", "net"] }
+tokio-uring = "0.5"  # io_uring support for Linux
 quinn = "0.11"  # QUIC implementation
 rustls = { version = "0.23", features = ["ring"] }
 prost = "0.13"
 prost-types = "0.13"
 bytes = "1.8"
 dashmap = "6.1"
+crossbeam = "0.8"  # Full crossbeam suite
 crossbeam-channel = "0.5"
+crossbeam-queue = "0.3"
+crossbeam-epoch = "0.9"
 parking_lot = "0.12"
 arc-swap = "1.7"
 ahash = "0.8"
 smallvec = "1.13"
 mimalloc = { version = "0.1", default-features = false }
+jemalloc-sys = { version = "0.5", features = ["stats", "profiling"] }
 socket2 = { version = "0.5", features = ["all"] }
-nix = { version = "0.29", features = ["net", "sched"] }
+nix = { version = "0.29", features = ["net", "sched", "mman", "signal"] }
 libc = "0.2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
@@ -39,6 +44,16 @@ chrono = "0.4"
 uuid = { version = "1.11", features = ["v4", "fast-rng", "serde"] }
 lz4 = "1.28"
 zstd = "0.13"
+rayon = "1.10"  # Parallel processing
+num_cpus = "1.16"
+simd = "0.8"  # SIMD operations
+packed_simd_2 = "0.3"
+rkyv = { version = "0.8", features = ["validation", "strict"] }  # Zero-copy serialization
+flume = "0.11"  # Fast MPMC channel
+mio = { version = "1.0", features = ["os-poll", "net"] }
+bloom = "0.3"  # Bloom filters
+hyperloglog = "0.2"  # HyperLogLog cardinality
+roaring = "0.10"  # Roaring bitmaps
 
 [build-dependencies]
 prost-build = "0.13"
@@ -51,7 +66,26 @@ panic = "abort"
 strip = true
 debug = false
 overflow-checks = false
+incremental = false
+
+[profile.release.build-override]
+opt-level = 3
+codegen-units = 1
 
 [profile.release.package."*"]
 opt-level = 3
 strip = true
+
+# Profile-guided optimization profile
+[profile.pgo]
+inherits = "release"
+lto = "fat"
+pgo-gen = "target/pgo-data"
+
+# Ultra-performance profile with specific CPU targeting
+[profile.ultra]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+target-cpu = "native"
+opt-level = 3
