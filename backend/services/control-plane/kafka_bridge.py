@@ -14,7 +14,7 @@ import aiokafka
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 import zstandard as zstd
 
-from .proto_gen import realtime_pb2, control_pb2
+from proto_gen import realtime_pb2, control_pb2
 
 
 # Global state

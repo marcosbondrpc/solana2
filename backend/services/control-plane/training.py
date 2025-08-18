@@ -23,7 +23,7 @@ import treelite
 import treelite_runtime
 import clickhouse_connect
 
-from .deps import User, get_current_user, require_permission, audit_log
+from deps import User, get_current_user, require_permission, audit_log
 
 
 router = APIRouter()
@@ -347,7 +347,7 @@ async def deploy_model(model_id: str):
     """Deploy model for inference"""
     # Send control command to swap model
     from .control import get_kafka_producer, sign_command
-    from .proto_gen import control_pb2
+    from proto_gen import control_pb2
     
     async with registry_lock:
         if model_id not in model_registry:

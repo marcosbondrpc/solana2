@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import clickhouse_connect
 
-from .deps import User, get_current_user, require_permission
+from deps import User, get_current_user, require_permission
 from .clickhouse_queries import MEVQueries, MarketDataQueries
 
 

@@ -25,7 +25,7 @@ except ImportError:
     print("⚠️ WebTransport not available. Install aioquic: pip install aioquic")
 
 import zstandard as zstd
-from .proto_gen import realtime_pb2
+from proto_gen import realtime_pb2
 
 
 # Compression

@@ -18,8 +18,8 @@ import aiokafka
 from aiokafka import AIOKafkaConsumer
 from google.protobuf.json_format import MessageToJson
 
-from .deps import verify_api_key, User
-from .proto_gen import realtime_pb2
+from deps import verify_api_key, User
+from proto_gen import realtime_pb2
 
 
 router = APIRouter()

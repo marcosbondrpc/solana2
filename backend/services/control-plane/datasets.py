@@ -19,7 +19,7 @@ import clickhouse_connect
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from .deps import User, get_current_user, require_permission, audit_log
+from deps import User, get_current_user, require_permission, audit_log
 
 
 router = APIRouter()

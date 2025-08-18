@@ -18,8 +18,8 @@ import nacl.signing
 import nacl.encoding
 from google.protobuf.json_format import MessageToJson, Parse
 
-from .deps import User, get_current_user, require_permission, audit_log
-from .proto_gen import control_pb2
+from deps import User, get_current_user, require_permission, audit_log
+from proto_gen import control_pb2
 
 
 router = APIRouter()
@@ -500,7 +500,7 @@ async def get_audit_log(
 ) -> List[Dict[str, Any]]:
     """Get recent audit log entries"""
     
-    from .deps import get_redis
+    from deps import get_redis
     redis_conn = await get_redis()
     
     if redis_conn:

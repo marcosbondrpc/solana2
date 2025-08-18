@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 import aioredis
 
-from .deps import get_redis
+from deps import get_redis
 
 
 router = APIRouter()

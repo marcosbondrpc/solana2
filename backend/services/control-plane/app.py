@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
     os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
     
-    logger.info("🚀 MEV Control Plane starting", config=PERFORMANCE_CONFIG)
+    print("🚀 MEV Control Plane starting")
     
     # Startup health check
     startup_time = time.perf_counter()
@@ -76,15 +76,15 @@ async def lifespan(app: FastAPI):
         await warmup_critical_paths()
         
         startup_duration = time.perf_counter() - startup_time
-        logger.info("✅ MEV Control Plane ready", startup_time=f"{startup_duration:.3f}s")
+        print(f"✅ MEV Control Plane ready in {startup_duration:.3f}s")
         
         yield
         
     except Exception as e:
-        logger.error("❌ Startup failed", error=str(e))
+        print(f"❌ Startup failed: {e}")
         sys.exit(1)
     finally:
-        logger.info("🛑 MEV Control Plane shutting down")
+        print("🛑 MEV Control Plane shutting down")
         await cleanup_resources()
 
 async def warmup_critical_paths():
@@ -183,10 +183,7 @@ async def status_check():
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Production-grade error handling."""
-    logger.error("Unhandled exception", 
-                path=request.url.path,
-                method=request.method,
-                error=str(exc))
+    print(f"Unhandled exception: {exc} at {request.url.path}")
     
     return JSONResponse(
         status_code=500,
@@ -200,7 +197,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 def setup_signal_handlers():
     """Graceful shutdown signal handling."""
     def signal_handler(signum, frame):
-        logger.info("Received shutdown signal", signal=signum)
+        print(f"Received shutdown signal: {signum}")
         sys.exit(0)
     
     signal.signal(signal.SIGTERM, signal_handler)

@@ -27,8 +27,8 @@ from clickhouse_driver import Client as ClickHouseClient
 import nacl.signing
 import nacl.encoding
 
-from .deps import User, get_current_user, require_permission, audit_log
-from .proto_gen import realtime_pb2, control_pb2
+from deps import User, get_current_user, require_permission, audit_log
+from proto_gen import realtime_pb2, control_pb2
 
 
 router = APIRouter()
