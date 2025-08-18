@@ -27,11 +27,11 @@ make sync              # Sync with GitHub repository
 ```bash
 cd frontend
 npm install            # Install dependencies
-npm run dev            # Start dev server (port 42392)
+npm run dev            # Start dev server (port 3001)
 npm run build          # Build production
-npm run lint           # Lint code
 npm run typecheck      # Type checking
-npm run proto:gen      # Regenerate protobuf types
+npm run test           # Run tests
+npm run coverage       # Test coverage
 ```
 
 ### Model & ML Operations
@@ -42,17 +42,42 @@ make pgo-mev                              # Profile-guided optimization
 make swap-model                           # Hot-reload models
 ```
 
+### Historical Data Infrastructure
+```bash
+make historical-infra      # Setup ClickHouse + Redpanda infrastructure
+make historical-start      # Start historical data pipeline
+make historical-stop       # Stop historical data pipeline
+make historical-ingester   # Run Yellowstone gRPC ingester
+make historical-backfill   # Run RPC backfill worker
+make historical-test       # Test infrastructure
+make historical-stats      # View ingestion statistics
+cd backend/services/historical-data && make quick-start  # Quick setup
+```
+
 ### Testing Requirements
 Before ANY code changes:
 1. Run `make lab-smoke-test` - MUST pass all tests
-2. Frontend: `npm run typecheck` and `npm run lint`
-3. Backend: `cargo test --release` in rust-services/
+2. Frontend: `npm run typecheck` and `npm run test` in frontend/
+3. Backend: `cargo test --release` in arbitrage-data-capture/rust-services/
+4. Detection services: `python -m pytest tests/` in services/detector/
 
 ### Emergency Controls
 ```bash
 make emergency-stop        # Kill all trading immediately
 make throttle PERCENT=10   # Reduce to 10% capacity
 make audit-trail          # View command history
+```
+
+### Detection System Commands (DEFENSIVE-ONLY)
+```bash
+make detection-up          # Start MEV detection system
+make detection-down        # Stop detection system
+make detection-status      # Check system health
+make detection-test        # Test detection endpoints
+make archetype-report      # Generate analysis report
+make detect-train          # Train detection models
+make detect-serve          # Start detection service
+make behavior-report ENTITY=address  # Generate entity behavior report
 ```
 
 ## Architecture & Code Structure
@@ -114,9 +139,11 @@ Before deployment, verify:
 7. ✅ ACK chain intact
 
 ## Network Access
-- **Frontend**: http://45.157.234.184:3001
-- **Backend API**: http://45.157.234.184:8000
-- **API Docs**: http://45.157.234.184:8000/docs
+- **Frontend**: http://45.157.234.184:3001 or http://localhost:3001 (dev)
+- **Backend API**: http://45.157.234.184:8000 or http://localhost:8000 (dev)
+- **API Docs**: http://45.157.234.184:8000/docs or http://localhost:8000/docs (dev)
+- **Detection API**: http://localhost:8800/docs (dev)
+- **Detection Dashboard**: http://localhost:4001 (dev)
 
 ## GitHub Integration
 Repository: https://github.com/marcosbondrpc/solana2
@@ -160,6 +187,10 @@ make pgo-build    # Build with profile
 | Model not loading | Check `make models-super` |
 | Low land rate | Adjust Thompson Sampling priors |
 | High latency | Check DSCP marking |
+| ClickHouse connection | Check `make historical-infra` |
+| Rust build fails | Run `cargo clean` then rebuild |
+| Frontend build errors | Delete node_modules, run `npm install` |
+| Detection services down | Run `make detection-up` |
 
 ## Feature Flags
 ```bash
