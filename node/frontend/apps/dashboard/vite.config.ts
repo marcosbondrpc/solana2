@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
+    base: '/',
     plugins: [
       react({
         jsxImportSource: '@emotion/react',
@@ -26,7 +27,7 @@ export default defineConfig(({ mode }) => {
         threshold: 1024,
       }),
       // Module preload for critical paths
-      {
+      mode === 'development' && {
         name: 'module-preload',
         transformIndexHtml(html) {
           return html.replace(
@@ -41,7 +42,10 @@ export default defineConfig(({ mode }) => {
       },
       VitePWA({
         registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        manifestFilename: 'manifest.json',
         includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+        workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg}'] },
         manifest: {
           name: 'Solana MEV Dashboard',
           short_name: 'MEV Dashboard',
