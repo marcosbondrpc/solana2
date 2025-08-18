@@ -397,7 +397,7 @@ async function processCalculation(data: any): Promise<any> {
 
 // Process batch of calculations
 async function processBatch(calculations: any[]): Promise<any[]> {
-  const results = [];
+  const results: any[] = [];
   
   for (const calc of calculations) {
     results.push(await processCalculation(calc));

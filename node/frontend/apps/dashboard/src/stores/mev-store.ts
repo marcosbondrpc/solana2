@@ -245,7 +245,9 @@ export const useMEVStore = create<MEVState>()(
             // Keep only last 10000 opportunities for memory efficiency
             if (state.arbitrageOpportunities.size > 10000) {
               const firstKey = state.arbitrageOpportunities.keys().next().value;
-              state.arbitrageOpportunities.delete(firstKey);
+              if (firstKey !== undefined) {
+                state.arbitrageOpportunities.delete(firstKey as string);
+              }
             }
           });
           
@@ -285,7 +287,9 @@ export const useMEVStore = create<MEVState>()(
             // Keep only last 5000 bundles
             if (state.jitoBundles.size > 5000) {
               const firstKey = state.jitoBundles.keys().next().value;
-              state.jitoBundles.delete(firstKey);
+              if (firstKey !== undefined) {
+                state.jitoBundles.delete(firstKey as string);
+              }
             }
           });
           

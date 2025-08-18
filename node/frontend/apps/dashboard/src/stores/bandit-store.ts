@@ -277,7 +277,9 @@ export const useBanditStore = create<BanditState>()(
             // Keep only last 10000 DNAs
             if (state.decisionDNAs.size > 10000) {
               const firstKey = state.decisionDNAs.keys().next().value;
-              state.decisionDNAs.delete(firstKey);
+              if (firstKey !== undefined) {
+                state.decisionDNAs.delete(firstKey as string);
+              }
             }
           });
         },

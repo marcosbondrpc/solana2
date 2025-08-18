@@ -73,7 +73,6 @@ import { NotificationSystem, type Notification } from '@/components/Notification
 import { useMonitoringStore } from '@/lib/monitoring-store';
 import { useMEVStore } from '@/stores/mev-store';
 import { useControlStore } from '@/stores/control-store';
-import { useBanditStore } from '@/stores/bandit-store';
 
 // Service configuration
 const SERVICES = [
@@ -594,7 +593,6 @@ export default function LegendaryDashboard() {
   } = useMEVStore();
   
   const { commands } = useControlStore();
-  const { banditState } = useBanditStore();
 
   const [serviceStatuses, setServiceStatuses] = useState<Record<string, string>>({});
   const [darkMode, setDarkMode] = useState(true);
@@ -743,13 +741,13 @@ export default function LegendaryDashboard() {
 
   // Calculate stats
   const stats = useMemo(() => ({
-    totalProfit: profitMetrics?.daily || 0,
-    successRate: systemPerformance?.successRate || 0,
-    activeOpportunities: arbitrageOpportunities?.length || 0,
-    tps: performance?.tps || 0,
+    totalProfit: profitMetrics?.dailyProfit || 0,
+    successRate: profitMetrics?.successRate || 0,
+    activeOpportunities: arbitrageOpportunities?.size || 0,
+    tps: performance?.currentTPS || 0,
     skipRate: consensus?.skipRate || 0,
     bundlesLanded: jito?.bundlesLanded || 0,
-  }), [profitMetrics, systemPerformance, arbitrageOpportunities, performance, consensus, jito]);
+  }), [profitMetrics, arbitrageOpportunities, performance, consensus, jito]);
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>

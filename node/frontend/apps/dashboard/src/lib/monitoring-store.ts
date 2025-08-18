@@ -323,6 +323,8 @@ export const useMonitoringStore = create<MonitoringState>()(
         health: null,
         
         historicalData: new Map(),
+        consensusHistory: { data: [], maxPoints: 300 },
+        performanceHistory: { data: [], maxPoints: 300 },
         
         activeAlerts: [],
         alertHistory: [],
@@ -420,19 +422,30 @@ export const useMonitoringStore = create<MonitoringState>()(
         
         // Historical data management
         addHistoricalPoint: (key, data) => set((state) => {
-          const history = state.historicalData.get(key) || [];
-          history.push({
+          const arr = state.historicalData.get(key) || [];
+          arr.push({
             ...data,
             timestamp: Date.now(),
           });
-          
-          // Limit history size
           const maxPoints = state.config.maxHistoricalPoints;
-          if (history.length > maxPoints) {
-            history.splice(0, history.length - maxPoints);
+          if (arr.length > maxPoints) {
+            arr.splice(0, arr.length - maxPoints);
           }
-          
-          state.historicalData.set(key, history);
+          state.historicalData.set(key, arr);
+
+          const point = { timestamp: Date.now(), value: data };
+          if (key === 'consensus') {
+            state.consensusHistory.data.push(point as { timestamp: number; value: ConsensusMetrics });
+            if (state.consensusHistory.data.length > state.consensusHistory.maxPoints) {
+              state.consensusHistory.data.shift();
+            }
+          }
+          if (key === 'performance') {
+            state.performanceHistory.data.push(point as { timestamp: number; value: PerformanceMetrics });
+            if (state.performanceHistory.data.length > state.performanceHistory.maxPoints) {
+              state.performanceHistory.data.shift();
+            }
+          }
         }),
         
         clearHistoricalData: (key) => set((state) => {
@@ -479,6 +492,10 @@ export const useMonitoringStore = create<MonitoringState>()(
         // Configuration
         updateConfig: (config) => set((state) => {
           state.config = { ...state.config, ...config };
+          if (config.maxHistoricalPoints) {
+            state.consensusHistory.maxPoints = config.maxHistoricalPoints;
+            state.performanceHistory.maxPoints = config.maxHistoricalPoints;
+          }
         }),
         
         // Batch updates

@@ -72,7 +72,7 @@ export const HealthOverview = memo(() => {
   
   // Critical metrics
   const criticalMetrics = useMemo(() => {
-    const metrics = [];
+    const metrics: any[] = [];
     
     if (consensus?.skipRate > 5) {
       metrics.push({
