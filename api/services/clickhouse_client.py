@@ -294,7 +294,7 @@ class ClickHousePool:
         """Close all connections in pool"""
         while not self.available.empty():
             try:
-                conn = await self.available.get_nowait()
+                conn = self.available.get_nowait()
                 conn.disconnect()
             except asyncio.QueueEmpty:
                 break
