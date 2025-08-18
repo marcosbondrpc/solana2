@@ -1,0 +1,48 @@
+{
+  "name": "@solana-mev/workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Legendary Solana MEV Infrastructure - Ultra-High Performance DeFi Dashboard",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "lab-smoke-test": "make lab-smoke-test",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && turbo run build",
+    "dashboard:dev": "cd frontend/apps/dashboard && npm run dev",
+    "operator:dev": "cd frontend/apps/operator && npm run dev"
+  },
+  "workspaces": [
+    "frontend/apps/*",
+    "frontend/packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^1.13.2",
+    "@turbo/gen": "^1.13.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcosbondrpc/solana2.git"
+  },
+  "keywords": [
+    "solana",
+    "mev",
+    "defi",
+    "dashboard",
+    "typescript",
+    "react",
+    "vite",
+    "turborepo",
+    "high-performance"
+  ],
+  "author": "Solana MEV Team",
+  "license": "MIT"
+}
