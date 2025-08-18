@@ -6,6 +6,7 @@ import json
 import hashlib
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from enum import Enum
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from models.schemas import AuditLogEntry, UserRole
@@ -24,9 +25,35 @@ class AuditLogger:
         self.hash_chain = []
         self.lock = asyncio.Lock()
     
+    def _to_serializable(self, obj: Any) -> Any:
+        if isinstance(obj, datetime):
+            return obj.astimezone(timezone.utc).isoformat()
+        if isinstance(obj, Enum):
+            return obj.value
+        if isinstance(obj, bytes):
+            try:
+                return obj.decode("utf-8")
+            except Exception:
+                return obj.hex()
+        if isinstance(obj, (set, tuple)):
+            return list(obj)
+        if isinstance(obj, Path):
+            return str(obj)
+        return obj
+
+    def _canonicalize(self, obj: Any) -> Any:
+        if isinstance(obj, dict):
+            return {k: self._canonicalize(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [self._canonicalize(v) for v in obj]
+        return self._to_serializable(obj)
+
+    def _canonical_dumps(self, obj: Any) -> str:
+        return json.dumps(self._canonicalize(obj), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
     def generate_entry_hash(self, entry: Dict[str, Any], previous_hash: str = "") -> str:
         """Generate hash for audit entry (for immutable chain)"""
-        entry_str = json.dumps(entry, sort_keys=True)
+        entry_str = self._canonical_dumps(entry)
         combined = f"{previous_hash}{entry_str}"
         return hashlib.sha256(combined.encode()).hexdigest()
     
@@ -72,7 +99,7 @@ class AuditLogger:
             
             # Write to file
             async with aiofiles.open(self.current_log_file, "a") as f:
-                await f.write(json.dumps(entry_dict) + "\n")
+                await f.write(self._canonical_dumps(entry_dict) + "\n")
             
             return entry_hash
     
