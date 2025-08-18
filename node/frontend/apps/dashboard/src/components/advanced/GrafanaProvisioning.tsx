@@ -335,17 +335,17 @@ export default function GrafanaProvisioning() {
     // Step 1: Check Grafana
     const grafanaOk = await checkGrafanaConnection();
     if (!grafanaOk) {
-      steps[0].status = 'error';
-      steps[0].result = 'Failed to connect to Grafana';
+      steps[0]!.status = 'error';
+      steps[0]!.result = 'Failed to connect to Grafana';
       setProvisioningSteps([...steps]);
       setIsProvisioning(false);
       message.error('Failed to connect to Grafana. Please check your configuration.');
       return;
     }
     
-    steps[0].status = 'finish';
-    steps[0].result = 'Grafana connected';
-    steps[1].status = 'process';
+    steps[0]!.status = 'finish';
+    steps[0]!.result = 'Grafana connected';
+    steps[1]!.status = 'process';
     setProvisioningSteps([...steps]);
     setCurrentStep(1);
 
@@ -357,16 +357,16 @@ export default function GrafanaProvisioning() {
     }
     
     if (!datasourceSuccess) {
-      steps[1].status = 'error';
-      steps[1].result = 'Some datasources failed to provision';
+      steps[1]!.status = 'error';
+      steps[1]!.result = 'Some datasources failed to provision';
       setProvisioningSteps([...steps]);
       setIsProvisioning(false);
       return;
     }
     
-    steps[1].status = 'finish';
-    steps[1].result = 'All datasources provisioned';
-    steps[2].status = 'process';
+    steps[1]!.status = 'finish';
+    steps[1]!.result = 'All datasources provisioned';
+    steps[2]!.status = 'process';
     setProvisioningSteps([...steps]);
     setCurrentStep(2);
 
@@ -378,24 +378,24 @@ export default function GrafanaProvisioning() {
     }
     
     if (!dashboardSuccess) {
-      steps[2].status = 'error';
-      steps[2].result = 'Some dashboards failed to install';
+      steps[2]!.status = 'error';
+      steps[2]!.result = 'Some dashboards failed to install';
       setProvisioningSteps([...steps]);
       setIsProvisioning(false);
       return;
     }
     
-    steps[2].status = 'finish';
-    steps[2].result = `${dashboards.length} dashboards installed`;
-    steps[3].status = 'process';
+    steps[2]!.status = 'finish';
+    steps[2]!.result = `${dashboards.length} dashboards installed`;
+    steps[3]!.status = 'process';
     setProvisioningSteps([...steps]);
     setCurrentStep(3);
 
     // Step 4: Configure alerts
     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate alert configuration
-    steps[3].status = 'finish';
-    steps[3].result = 'Alerts configured';
-    steps[4].status = 'process';
+    steps[3]!.status = 'finish';
+    steps[3]!.result = 'Alerts configured';
+    steps[4]!.status = 'process';
     setProvisioningSteps([...steps]);
     setCurrentStep(4);
 
@@ -405,15 +405,15 @@ export default function GrafanaProvisioning() {
       const result = await response.json();
       
       if (result.success) {
-        steps[4].status = 'finish';
-        steps[4].result = 'All tests passed';
+        steps[4]!.status = 'finish';
+        steps[4]!.result = 'All tests passed';
       } else {
-        steps[4].status = 'error';
-        steps[4].result = 'Some tests failed';
+        steps[4]!.status = 'error';
+        steps[4]!.result = 'Some tests failed';
       }
     } catch {
-      steps[4].status = 'error';
-      steps[4].result = 'Smoke tests failed';
+      steps[4]!.status = 'error';
+      steps[4]!.result = 'Smoke tests failed';
     }
     
     setProvisioningSteps([...steps]);

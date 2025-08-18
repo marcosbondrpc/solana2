@@ -68,8 +68,8 @@ export default function HashChainVerifier() {
       let verified = 0;
       
       for (let i = 1; i < hashState.blocks.length; i++) {
-        const block = hashState.blocks[i];
-        const prevBlock = hashState.blocks[i - 1];
+        const block = hashState.blocks[i]!;
+        const prevBlock = hashState.blocks[i - 1]!;
         
         if (block.previousHash !== prevBlock.hash) {
           hashState.verificationStatus.brokenAt = block.height;
