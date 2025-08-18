@@ -2,6 +2,7 @@
   "name": "@solana-mev/workspace",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.0.0",
   "description": "Legendary Solana MEV Infrastructure - Ultra-High Performance DeFi Dashboard",
   "scripts": {
     "dev": "turbo run dev",
