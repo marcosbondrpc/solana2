@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { Card } from '../../ui/card';
+import { Card } from '../../ui/Card';
 
 interface FeatureCorrelationMatrixProps {
   data: {

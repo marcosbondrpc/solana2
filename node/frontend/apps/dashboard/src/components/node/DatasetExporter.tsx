@@ -33,9 +33,9 @@ import {
   Gauge
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
-import { Card } from '../ui/card';
-import { Badge } from '../ui/badge';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { useDataExportStore } from '../../stores/data-export-store';
 import { DataExportService } from '../../services/data-export.service';
 import { FeatureCorrelationMatrix } from './export/FeatureCorrelationMatrix';
