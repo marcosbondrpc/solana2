@@ -20,7 +20,7 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, WebSocket, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-import ed25519
+from nacl import signing
 import blake3
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
 
@@ -103,8 +103,8 @@ class DefensiveService:
     
     def __init__(self):
         self.session: Optional[aiohttp.ClientSession] = None
-        self.signing_key = ed25519.SigningKey(b'0' * 32)  # Would load from secure storage
-        self.verifying_key = self.signing_key.verifying_key
+        self.signing_key = signing.SigningKey(b'0' * 32)
+        self.verifying_key = self.signing_key.verify_key
         self.message_buffer = deque(maxlen=10000)
         self.detection_cache = {}
         self.merkle_leaves = []
@@ -306,8 +306,8 @@ class DefensiveService:
     
     def _sign_message(self, data: bytes) -> str:
         """Sign message with Ed25519"""
-        signature = self.signing_key.sign(data)
-        return signature.hex()
+        signed = self.signing_key.sign(data)
+        return signed.signature.hex()
     
     def _compute_transaction_hash(self, transactions: List[Transaction]) -> str:
         """Compute hash of transaction list for caching"""
