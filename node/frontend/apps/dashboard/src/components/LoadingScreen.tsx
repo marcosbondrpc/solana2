@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export function LoadingScreen() {
+export function LoadingScreen({ message }: { message?: string }) {
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('Initializing MEV Dashboard');
 
@@ -17,7 +17,7 @@ export function LoadingScreen() {
     let textIndex = 0;
     const textInterval = setInterval(() => {
       textIndex = (textIndex + 1) % texts.length;
-      setLoadingText(texts[textIndex]);
+      setLoadingText((texts[textIndex] as string));
     }, 1500);
 
     const progressInterval = setInterval(() => {
@@ -50,7 +50,7 @@ export function LoadingScreen() {
 
           {/* Loading Text */}
           <h2 className="text-xl font-semibold text-white mb-2">
-            {loadingText}
+            {message ?? loadingText}
           </h2>
           
           {/* Progress Bar */}

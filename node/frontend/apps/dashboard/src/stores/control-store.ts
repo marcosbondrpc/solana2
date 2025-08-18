@@ -129,6 +129,7 @@ interface ControlState {
   signCommand: (commandId: string, approved: boolean, comment?: string) => Promise<void>;
   executeCommand: (commandId: string) => Promise<void>;
   rejectCommand: (commandId: string, reason: string) => void;
+  processCommand: (data: any) => void;
   
   toggleKillSwitch: (switchId: string, enabled: boolean) => void;
   triggerKillSwitch: (switchId: string, triggeredBy: string) => void;
@@ -136,6 +137,7 @@ interface ControlState {
   
   updateSLO: (sloId: string, update: Partial<SLO>) => void;
   checkSLOBreaches: () => void;
+  evaluateCondition: (condition: TriggerCondition, value: number) => boolean;
   
   updateMultisigConfig: (config: Partial<MultisigConfig>) => void;
   setSigner: (signer: ControlState['currentSigner']) => void;
@@ -476,6 +478,12 @@ export const useControlStore = create<ControlState>()(
             result: 'success',
             details: { switchId }
           });
+        },
+        
+        processCommand: (data) => {
+          if (data) {
+            // no-op placeholder to satisfy typings
+          }
         },
         
         updateKillSwitchConditions: (switchId, conditions) => {

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState, useDeferredValue, useTransition, startTransition } from 'react';
+import { Suspense, lazy, useEffect, useState, useTransition } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -54,7 +54,7 @@ const wsConfig = {
 
 // Layout wrapper component for router with concurrent features
 function LayoutWrapper() {
-  const [isPending, startTransition] = useTransition();
+  const [isPending] = useTransition();
   
   return (
     <Layout>
@@ -73,39 +73,27 @@ function LayoutWrapper() {
   );
 }
 
-// Create router with v7 future flags
-const router = createBrowserRouter(
-  [
-    {
-      path: '/',
-      element: <LayoutWrapper />,
-      errorElement: <ErrorFallback />,
-      children: [
-        { index: true, element: <Navigate to="/dashboard" replace /> },
-        { path: 'dashboard', element: <DashboardPage /> },
-        { path: 'node', element: <NodePage /> },
-        { path: 'scrapper', element: <ScrapperPage /> },
-        { path: 'mev', element: <MEVPage /> },
-        { path: 'arbitrage', element: <ArbitragePage /> },
-        { path: 'jito', element: <JitoPage /> },
-        { path: 'analytics', element: <AnalyticsPage /> },
-        { path: 'monitoring', element: <MonitoringPage /> },
-        { path: 'settings', element: <SettingsPage /> },
-        { path: '*', element: <Navigate to="/dashboard" replace /> },
-      ],
-    },
-  ],
+// Create router
+const router = createBrowserRouter([
   {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-      v7_fetcherPersist: true,
-      v7_normalizeFormMethod: true,
-      v7_partialHydration: true,
-      v7_skipActionErrorRevalidation: true,
-    },
-  }
-);
+    path: '/',
+    element: <LayoutWrapper />,
+    errorElement: <ErrorFallback />,
+    children: [
+      { index: true, element: <Navigate to="/dashboard" replace /> },
+      { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'node', element: <NodePage /> },
+      { path: 'scrapper', element: <ScrapperPage /> },
+      { path: 'mev', element: <MEVPage /> },
+      { path: 'arbitrage', element: <ArbitragePage /> },
+      { path: 'jito', element: <JitoPage /> },
+      { path: 'analytics', element: <AnalyticsPage /> },
+      { path: 'monitoring', element: <MonitoringPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: '*', element: <Navigate to="/dashboard" replace /> },
+    ],
+  },
+]);
 
 // Performance monitoring integration
 const enablePerformanceMonitoring = import.meta.env.VITE_ENABLE_PERF_MONITOR !== 'false';
@@ -125,6 +113,7 @@ export function App() {
       window.addEventListener('keydown', handleKeyPress);
       return () => window.removeEventListener('keydown', handleKeyPress);
     }
+    return undefined;
   }, []);
   useEffect(() => {
     // Register service worker for PWA
@@ -135,12 +124,12 @@ export function App() {
     // Performance monitoring
     if (import.meta.env.PROD && typeof window !== 'undefined') {
       // Log Web Vitals
-      import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
-        onCLS(console.log);
-        onFID(console.log);
-        onFCP(console.log);
-        onLCP(console.log);
-        onTTFB(console.log);
+      import('web-vitals').then((m: any) => {
+        m.onCLS?.(console.log);
+        (m.onFID ?? m.onINP)?.(console.log);
+        m.onFCP?.(console.log);
+        m.onLCP?.(console.log);
+        m.onTTFB?.(console.log);
       });
     }
   }, []);
