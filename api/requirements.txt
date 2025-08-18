@@ -2,7 +2,6 @@ fastapi
 uvicorn[standard]
 passlib[bcrypt]
 python-jose[cryptography]
-ed25519
 aiokafka
 clickhouse-driver
 psutil
