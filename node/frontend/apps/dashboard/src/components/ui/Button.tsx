@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'gradient';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'gradient' | 'outline' | 'destructive';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -77,6 +77,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         active:from-purple-600 active:via-pink-600 active:to-cyan-600
         disabled:from-gray-600 disabled:via-gray-700 disabled:to-gray-600
         ${glow ? 'shadow-lg shadow-purple-500/25' : ''}
+      `,
+      outline: `
+        bg-transparent border border-gray-600 text-gray-300
+        hover:bg-gray-800 hover:border-gray-500
+        active:bg-gray-700
+        disabled:border-gray-700 disabled:text-gray-500
+      `,
+      destructive: `
+        bg-gradient-to-r from-rose-600 to-red-600 text-white
+        hover:from-rose-500 hover:to-red-500
+        active:from-rose-700 active:to-red-700
+        ${glow ? 'shadow-lg shadow-rose-500/25' : ''}
       `
     };
     

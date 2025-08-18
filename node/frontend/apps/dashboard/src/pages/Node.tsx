@@ -209,7 +209,7 @@ export default function NodePage() {
   const [dryRunMode, setDryRunMode] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  const { data, isConnected } = (useWebSocket('node-status') as any);
+  const { data, isConnected } = ((useWebSocket as any)('node-status') as any);
 
   useEffect(() => {
     if (data) {
