@@ -135,7 +135,8 @@ export class DataExportService extends ApiBase {
    * Stream export data using Server-Sent Events
    */
   streamExport(exportId: string, onMessage: (data: any) => void, onError?: (error: any) => void) {
-    const eventSource = new EventSource(`${this.baseUrl}/api/mission-control/export/stream/${exportId}`);
+    const base = (this as any).baseUrl ?? '';
+    const eventSource = new EventSource(`${base}/api/mission-control/export/stream/${exportId}`);
     
     eventSource.onmessage = (event) => {
       try {

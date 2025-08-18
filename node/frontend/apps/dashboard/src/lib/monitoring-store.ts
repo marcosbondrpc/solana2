@@ -10,32 +10,61 @@ import { devtools } from 'zustand/middleware';
 
 // Types for monitoring system
 export interface ConsensusMetrics {
-  slot: number;
-  blockHeight: number;
-  skipRate: number;
-  votingState: 'voting' | 'delinquent' | 'unknown';
-  leaderSchedule: string[];
-  voteCredits: number;
+  votingState: 'voting' | 'delinquent' | 'inactive';
+  lastVoteSlot: number;
   rootSlot: number;
+  credits: number;
+  epochCredits: number;
+  commission: number;
+  skipRate: number;
+  leaderSlots: number;
+  blocksProduced: number;
+  slotsSkipped?: number;
   optimisticSlot: number;
-  epochProgress: number;
+  optimisticConfirmationTime: number;
+  towerHeight: number;
+  towerRoot: number;
+  validatorActiveStake: bigint;
+  validatorDelinquentStake: bigint;
+  // Optional legacy/aux fields
+  slot?: number;
+  blockHeight?: number;
+  leaderSchedule?: string[];
+  epochProgress?: number;
+  voteCredits?: number;
 }
 
 export interface PerformanceMetrics {
-  tps: number;
-  txSuccess: number;
-  txFailed: number;
-  blockTime: number;
+  currentTPS: number;
+  peakTPS: number;
+  averageTPS: number;
+  slotTime: number;
+  confirmationTime: number;
   bankingStage: {
+    bufferedPackets: number;
     forwardedPackets: number;
     droppedPackets: number;
-    bufferedPackets: number;
-    consumedPackets: number;
+    processingTime: number;
+    threadsActive: number;
+  };
+  fetchStage: {
+    packetsReceived: number;
+    packetsProcessed: number;
+    latency: number;
+  };
+  voteStage: {
+    votesProcessed: number;
+    voteLatency: number;
+  };
+  shredStage: {
+    shredsReceived: number;
+    shredsInserted: number;
+    shredLatency: number;
   };
   replayStage: {
     slotsReplayed: number;
-    duplicateSlots: number;
-    deadSlots: number;
+    forkWeight: number;
+    replayLatency: number;
   };
 }
 
@@ -142,11 +171,18 @@ export interface SecurityAlert {
 
 export interface HealthScore {
   overall: number;
-  consensus: number;
-  performance: number;
-  network: number;
-  system: number;
-  security: number;
+  components: {
+    consensus: number;
+    performance: number;
+    rpc: number;
+    network: number;
+    system: number;
+    jito: number;
+    geyser: number;
+    security: number;
+  };
+  issues: string[];
+  recommendations: string[];
 }
 
 export interface Alert {
@@ -197,6 +233,11 @@ interface WSMessage {
   timestamp: number;
 }
 
+interface HistoricalData<T> {
+  data: Array<{ timestamp: number; value: T }>;
+  maxPoints: number;
+}
+
 interface MonitoringState {
   // Connection management
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -216,6 +257,8 @@ interface MonitoringState {
   
   // Historical data (for charts)
   historicalData: Map<string, any[]>;
+  consensusHistory: HistoricalData<ConsensusMetrics>;
+  performanceHistory: HistoricalData<PerformanceMetrics>;
   
   // Alerts & notifications
   activeAlerts: Alert[];

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'outline';
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'purple' | 'outline' | 'secondary' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
   pulse?: boolean;
@@ -37,7 +37,9 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       danger: "bg-red-500/20 text-red-400 border-red-500/30",
       info: "bg-blue-500/20 text-blue-400 border-blue-500/30",
       purple: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      outline: "bg-transparent text-gray-300 border-gray-600"
+      outline: "bg-transparent text-gray-300 border-gray-600",
+      secondary: "bg-gray-800/50 text-gray-300 border-gray-600",
+      destructive: "bg-red-500/20 text-red-400 border-red-500/30"
     };
     
     const badgeContent = (
