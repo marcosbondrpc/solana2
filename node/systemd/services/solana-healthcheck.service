@@ -1,6 +1,0 @@
-[Unit]
-Description=Solana RPC healthcheck
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/solana-healthcheck.sh

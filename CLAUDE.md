@@ -23,15 +23,29 @@ make health-check      # Verify system health
 make sync              # Sync with GitHub repository
 ```
 
-### Frontend Development
+### Frontend Development (Monorepo Structure)
 ```bash
-cd frontend
-npm install            # Install dependencies
-npm run dev            # Start dev server (port 3001)
-npm run build          # Build production
-npm run typecheck      # Type checking
-npm run test           # Run tests
-npm run coverage       # Test coverage
+# Workspace management
+npm run dev                    # Start all frontend apps in dev mode
+npm run build                  # Build all frontend apps
+npm run test                   # Run tests across workspace
+npm run lint                   # Lint all packages
+npm run type-check             # Type check all packages
+
+# Individual app development
+npm run dashboard:dev          # Start dashboard app (port 3001)
+npm run operator:dev           # Start operator app (port 3002)
+
+# Direct app commands
+cd frontend/apps/dashboard
+npm run dev                    # Dashboard development server
+npm run build                  # Build dashboard for production
+npm run test                   # Run dashboard tests
+
+# Packages development
+cd frontend/packages/ui        # Shared UI components library
+cd frontend/packages/charts    # Chart components library
+cd frontend/packages/websocket # WebSocket client library
 ```
 
 ### Model & ML Operations
@@ -103,10 +117,17 @@ make behavior-report ENTITY=address  # Generate entity behavior report
    - Schema definitions in DDL files
    - Protobuf Kafka integration: `11_kafka_proto.sql`
 
-5. **Frontend** (`frontend/`)
-   - Next.js with React
-   - Real-time protobuf decoding in workers/
-   - MEV control center: `components/mev/`
+5. **Frontend Monorepo** (`frontend/`)
+   - **Apps**: Individual applications with specific purposes
+     - `apps/dashboard/`: Main MEV dashboard with real-time data
+     - `apps/operator/`: Operator control interface
+   - **Packages**: Shared libraries and utilities
+     - `packages/ui/`: Radix-based design system components
+     - `packages/charts/`: Specialized MEV visualization components  
+     - `packages/websocket/`: Ultra-low-latency WebSocket client
+     - `packages/protobuf/`: Protocol buffer definitions
+   - **Architecture**: Turborepo-managed monorepo with optimal build caching
+   - **Performance**: Sub-10ms render times with virtual scrolling and Web Workers
 
 ### Protocol Buffers
 All communication uses protobuf. Schemas in `protocol/`:
