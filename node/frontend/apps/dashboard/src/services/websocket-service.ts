@@ -1,16 +1,5 @@
 import { io, Socket } from 'socket.io-client';
 import { useMonitoringStore } from '@/lib/monitoring-store';
-import {
-  ConsensusMetrics,
-  PerformanceMetrics,
-  RPCLayerMetrics,
-  NetworkMetrics,
-  OSMetrics,
-  JitoMEVMetrics,
-  GeyserMetrics,
-  SecurityMetrics,
-  HealthScore,
-} from '@/types/monitoring';
 
 interface WebSocketConfig {
   url: string;
@@ -109,52 +98,52 @@ export class WebSocketService {
     });
 
     // Metrics events with performance tracking
-    this.socket.on('metrics:consensus', (data: ConsensusMetrics) => {
+    this.socket.on('metrics:consensus', (data: any) => {
       this.trackMessagePerformance('consensus');
       store.updateConsensus(data);
       store.addHistoricalPoint('consensus', data);
       this.checkConsensusAlerts(data);
     });
 
-    this.socket.on('metrics:performance', (data: PerformanceMetrics) => {
+    this.socket.on('metrics:performance', (data: any) => {
       this.trackMessagePerformance('performance');
       store.updatePerformance(data);
       store.addHistoricalPoint('performance', data);
       this.checkPerformanceAlerts(data);
     });
 
-    this.socket.on('metrics:rpc', (data: RPCLayerMetrics) => {
+    this.socket.on('metrics:rpc', (data: any) => {
       this.trackMessagePerformance('rpc');
       store.updateRPCLayer(data);
       store.addHistoricalPoint('rpc', data);
       this.checkRPCAlerts(data);
     });
 
-    this.socket.on('metrics:network', (data: NetworkMetrics) => {
+    this.socket.on('metrics:network', (data: any) => {
       this.trackMessagePerformance('network');
       store.updateNetwork(data);
       store.addHistoricalPoint('network', data);
     });
 
-    this.socket.on('metrics:os', (data: OSMetrics) => {
+    this.socket.on('metrics:os', (data: any) => {
       this.trackMessagePerformance('os');
       store.updateOS(data);
       store.addHistoricalPoint('os', data);
       this.checkSystemAlerts(data);
     });
 
-    this.socket.on('metrics:jito', (data: JitoMEVMetrics) => {
+    this.socket.on('metrics:jito', (data: any) => {
       this.trackMessagePerformance('jito');
       store.updateJito(data);
       store.addHistoricalPoint('jito', data);
     });
 
-    this.socket.on('metrics:geyser', (data: GeyserMetrics) => {
+    this.socket.on('metrics:geyser', (data: any) => {
       this.trackMessagePerformance('geyser');
       store.updateGeyser(data);
     });
 
-    this.socket.on('metrics:security', (data: SecurityMetrics) => {
+    this.socket.on('metrics:security', (data: any) => {
       this.trackMessagePerformance('security');
       store.updateSecurity(data);
       
@@ -168,7 +157,7 @@ export class WebSocketService {
       }
     });
 
-    this.socket.on('health:update', (data: HealthScore) => {
+    this.socket.on('health:update', (data: any) => {
       store.updateHealth(data);
       
       // Check for critical health issues

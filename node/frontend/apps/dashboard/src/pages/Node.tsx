@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { useWebSocket } from '../hooks/use-websocket';
 import { 
   Power, 
@@ -209,7 +209,7 @@ export default function NodePage() {
   const [dryRunMode, setDryRunMode] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  const { data, isConnected } = useWebSocket('node-status');
+  const { data, isConnected } = (useWebSocket('node-status') as any);
 
   useEffect(() => {
     if (data) {

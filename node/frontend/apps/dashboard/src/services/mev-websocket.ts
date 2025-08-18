@@ -368,27 +368,21 @@ class MEVWebSocketService extends EventEmitter {
     }
     
     try {
-      let data: ArrayBuffer | string;
-      
       if (this.binaryProtocol) {
-        // Use MessagePack for binary encoding
         const encoded = encode(message);
         const buffer = encoded.buffer.slice(
           encoded.byteOffset,
           encoded.byteOffset + encoded.byteLength
-        );
-        data = buffer;
-        this.stats.bytesSent += (buffer as ArrayBuffer).byteLength;
+        ) as ArrayBuffer;
+        this.ws.send(buffer);
+        this.stats.bytesSent += buffer.byteLength;
+        return true;
       } else {
-        // Fallback to JSON
         const json = JSON.stringify(message);
-        data = json;
+        this.ws.send(json);
         this.stats.bytesSent += json.length;
+        return true;
       }
-      
-      this.ws.send(data);
-      return true;
-      
     } catch (error) {
       console.error('Error sending WebSocket message:', error);
       this.stats.errors++;

@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
+import { Card } from './ui/Card';
+import { Badge } from './ui/Badge';
+import { Button } from './ui/Button';
+import { Progress } from './ui/Progress';
 import { useToast } from '../hooks/use-toast';
 import { format, subDays, subHours, subMonths, startOfDay, endOfDay } from 'date-fns';
 import { 

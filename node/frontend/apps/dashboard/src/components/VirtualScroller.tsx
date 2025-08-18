@@ -57,15 +57,11 @@ class HeightCache {
 }
 
 // Memoized row component
-const Row = memo(<T,>({ 
-  data, 
-  index, 
-  style 
-}: ListChildComponentProps<{
-  items: T[];
-  renderItem: (item: T, index: number, style: React.CSSProperties) => React.ReactNode;
-  measureHeight?: (index: number, element: HTMLElement) => void;
-}>) => {
+const Row = memo(<T,>({
+  data,
+  index,
+  style
+}: ListChildComponentProps<any>) => {
   const { items, renderItem, measureHeight } = data;
   const rowRef = useRef<HTMLDivElement>(null);
   
@@ -220,7 +216,7 @@ export function VirtualScroller<T>({
     <div className={`virtual-scroller ${className}`} style={{ height: '100%', width: '100%' }}>
       <AutoSizer>
         {({ height, width }) => (
-          <List
+          <List<any>
             ref={listRef}
             outerRef={outerRef}
             height={height}

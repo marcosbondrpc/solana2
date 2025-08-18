@@ -163,7 +163,6 @@ export const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
           "hover:shadow-2xl hover:shadow-cyan-500/10",
           className
         )}
-        {...props}
       >
         {/* Background gradient effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20" />

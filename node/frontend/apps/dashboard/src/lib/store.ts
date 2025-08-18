@@ -281,14 +281,14 @@ export const useNodeStore = create<NodeState>()(
         
         addLog: (log) => {
           set((state) => {
+            const incoming: any = log as any;
             const logEntry: LogEntry = {
-              ...log,
-              timestamp: log.timestamp instanceof Date ? log.timestamp : new Date(),
+              ...(incoming as any),
+              timestamp: incoming?.timestamp instanceof Date ? incoming.timestamp : new Date(),
             };
             
             state.logs.unshift(logEntry);
             
-            // Keep logs under max limit
             if (state.logs.length > state.maxLogs) {
               state.logs = state.logs.slice(0, state.maxLogs);
             }

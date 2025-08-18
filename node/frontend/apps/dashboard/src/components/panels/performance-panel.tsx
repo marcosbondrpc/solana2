@@ -41,8 +41,8 @@ import {
 } from 'lucide-react';
 
 export const PerformancePanel = memo(() => {
-  const performance = useMonitoringStore((state) => state.performance);
-  const performanceHistory = useMonitoringStore((state) => state.performanceHistory);
+  const performance = useMonitoringStore((state) => state.performance) as any;
+  const performanceHistory = useMonitoringStore((state) => state.performanceHistory) as any;
   
   // Prepare TPS chart data
   const tpsData = useMemo(() => {

@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Progress } from '../components/ui/progress';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Progress } from '../components/ui/Progress';
 import { useToast } from '../hooks/use-toast';
 import HistoricalCapturePanel from '../components/HistoricalCapturePanel';
 
