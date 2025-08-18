@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS mempool_analysis (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMMDD(timestamp)
 ORDER BY timestamp
-TTL timestamp + INTERVAL 30 DAY;
+TTL toDateTime(timestamp) + INTERVAL 30 DAY;
 
 -- Risk metrics tracking
 CREATE TABLE IF NOT EXISTS risk_metrics (
