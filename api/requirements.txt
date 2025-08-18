@@ -1,5 +1,5 @@
-uvicorn[standard]
 fastapi
+uvicorn[standard]
 passlib[bcrypt]
 python-jose[cryptography]
 ed25519
@@ -9,3 +9,11 @@ psutil
 uvloop
 httptools
 protobuf
+tenacity
+pandas
+pyarrow
+aiohttp
+numpy
+blake3
+prometheus-client
+lz4

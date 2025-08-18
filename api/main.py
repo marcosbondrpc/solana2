@@ -255,10 +255,19 @@ async def health_check() -> Dict[str, Any]:
             error=str(e)
         ))
     
-    # Get uptime
-    import psutil
-    process = psutil.Process()
-    uptime = (datetime.now() - datetime.fromtimestamp(process.create_time())).total_seconds()
+    metrics = {}
+    uptime = 0.0
+    try:
+        import psutil
+        process = psutil.Process()
+        uptime = (datetime.now() - datetime.fromtimestamp(process.create_time())).total_seconds()
+        metrics = {
+            "memory_mb": process.memory_info().rss / 1024 / 1024,
+            "cpu_percent": process.cpu_percent(),
+            "num_threads": process.num_threads()
+        }
+    except Exception as e:
+        metrics = {"error": str(e)}
     
     return HealthResponse(
         success=True,
@@ -266,11 +275,7 @@ async def health_check() -> Dict[str, Any]:
         version="1.0.0",
         uptime_seconds=uptime,
         dependencies=dependencies,
-        metrics={
-            "memory_mb": process.memory_info().rss / 1024 / 1024,
-            "cpu_percent": process.cpu_percent(),
-            "num_threads": process.num_threads()
-        }
+        metrics=metrics
     ).dict()
 
 
