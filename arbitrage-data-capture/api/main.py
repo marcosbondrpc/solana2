@@ -204,6 +204,7 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityMiddleware)
     
     # 5. Rate limiting
+    import os
     app.add_middleware(
         RateLimitMiddleware,
         rate=int(os.getenv("RATE_LIMIT_PER_SECOND", "1000")),
