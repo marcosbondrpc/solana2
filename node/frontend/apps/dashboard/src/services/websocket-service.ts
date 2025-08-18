@@ -245,7 +245,7 @@ export class WebSocketService {
     return handlers[type] || null;
   }
 
-  private checkConsensusAlerts(metrics: ConsensusMetrics): void {
+  private checkConsensusAlerts(metrics: any): void {
     const store = useMonitoringStore.getState();
     const config = store.alertConfig;
     
@@ -272,7 +272,7 @@ export class WebSocketService {
     }
   }
 
-  private checkPerformanceAlerts(metrics: PerformanceMetrics): void {
+  private checkPerformanceAlerts(metrics: any): void {
     const store = useMonitoringStore.getState();
     
     if (metrics.bankingStage.droppedPackets > 1000) {
@@ -287,7 +287,7 @@ export class WebSocketService {
     }
   }
 
-  private checkRPCAlerts(metrics: RPCLayerMetrics): void {
+  private checkRPCAlerts(metrics: any): void {
     const store = useMonitoringStore.getState();
     const config = store.alertConfig;
     
@@ -305,7 +305,7 @@ export class WebSocketService {
     });
   }
 
-  private checkSystemAlerts(metrics: OSMetrics): void {
+  private checkSystemAlerts(metrics: any): void {
     const store = useMonitoringStore.getState();
     const config = store.alertConfig;
     

@@ -22,7 +22,7 @@ interface MemoryStats {
 
 // Circular buffer for efficient memory usage
 class CircularBuffer<T> {
-  private buffer: T[];
+  private buffer: (T | undefined)[];
   private head = 0;
   private tail = 0;
   private size = 0;
@@ -49,7 +49,10 @@ class CircularBuffer<T> {
     let current = this.head;
     
     for (let i = 0; i < this.size; i++) {
-      result.push(this.buffer[current]);
+      const val = this.buffer[current];
+      if (val !== undefined) {
+        result.push(val as T);
+      }
       current = (current + 1) % this.capacity;
     }
     

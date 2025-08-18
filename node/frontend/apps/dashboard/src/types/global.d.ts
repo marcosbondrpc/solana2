@@ -8,3 +8,4 @@ declare module "*.worker.ts" { const WorkerConstructor: { new (): Worker }; expo
 declare module "react-virtualized-auto-sizer";
 declare module "*.module.css";
 declare module "*.module.scss";
+declare module "@ant-design/plots";
