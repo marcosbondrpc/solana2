@@ -100,7 +100,7 @@ export function VirtualScroller<T>({
   getItemKey
 }: VirtualScrollerProps<T>) {
   const listRef = useRef<List>(null);
-  const outerRef = useRef<HTMLElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
   const heightCacheRef = useRef(new HeightCache(estimatedItemHeight));
   const [cacheVersion, setCacheVersion] = useState(0);
   const scrollPositionRef = useRef({ index: 0, offset: 0 });
@@ -131,8 +131,9 @@ export function VirtualScroller<T>({
   }, [cacheVersion]); // Include cacheVersion to trigger re-render
 
   // Handle scroll events
-  const handleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
-    const target = e.currentTarget;
+  const handleScroll = useCallback(() => {
+    const target = outerRef.current;
+    if (!target) return;
     const scrollTop = target.scrollTop;
     const scrollHeight = target.scrollHeight;
     
@@ -199,7 +200,7 @@ export function VirtualScroller<T>({
   // Generate item key
   const itemKey = useCallback((index: number, data: typeof itemData) => {
     if (getItemKey) {
-      return getItemKey(data.items[index], index);
+      return getItemKey(data.items[index]!, index);
     }
     return `item-${index}`;
   }, [getItemKey]);
@@ -229,7 +230,7 @@ export function VirtualScroller<T>({
             itemData={itemData}
             itemKey={itemKey}
             overscanCount={overscan}
-            onScroll={handleScroll}
+            onScroll={handleScroll as any}
             estimatedItemSize={estimatedItemHeight}
             style={{
               overflowX: 'hidden',

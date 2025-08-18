@@ -410,7 +410,8 @@ export class EnhancedWebSocketService {
     
     if (decoder) {
       try {
-        const message = decoder.decode(data);
+        const buf = data instanceof ArrayBuffer ? data : new Uint8Array(data as any).slice().buffer;
+        const message = decoder.decode(buf);
         this.handleMessage(service, message);
       } catch (error) {
         console.error(`Failed to decode protobuf from ${service}:`, error);

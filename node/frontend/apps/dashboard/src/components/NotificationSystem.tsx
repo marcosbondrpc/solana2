@@ -206,10 +206,8 @@ export function NotificationSystem({
   // Play sound for new notifications
   useEffect(() => {
     if (!muted && notifications.length > 0) {
-      // You can add actual sound effects here
       const latestNotification = notifications[0];
-      if (Date.now() - latestNotification.timestamp < 1000) {
-        // Play sound effect
+      if (latestNotification && Date.now() - latestNotification.timestamp < 1000) {
         console.log('Playing notification sound');
       }
     }
