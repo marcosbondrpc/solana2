@@ -1,0 +1,112 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**",
+        "build/**"
+      ],
+      "env": [
+        "NODE_ENV",
+        "API_URL",
+        "WS_URL",
+        "VITE_*",
+        "NEXT_*"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "NODE_ENV",
+        "API_URL", 
+        "WS_URL",
+        "VITE_*",
+        "NEXT_*"
+      ]
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "src/**/*.{ts,tsx}",
+        ".eslintrc.*",
+        "eslint.config.*"
+      ]
+    },
+    "lint:fix": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "src/**/*.{ts,tsx}",
+        ".eslintrc.*",
+        "eslint.config.*"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "inputs": [
+        "src/**/*.{ts,tsx}",
+        "tsconfig.json",
+        "tsconfig.*.json"
+      ]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": [
+        "coverage/**"
+      ],
+      "inputs": [
+        "src/**/*.{ts,tsx}",
+        "test/**/*.{ts,tsx}",
+        "__tests__/**/*.{ts,tsx}",
+        "*.config.{js,ts}",
+        "vitest.config.*",
+        "jest.config.*"
+      ]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    },
+    "proto:gen": {
+      "outputs": [
+        "src/proto/**",
+        "dist/proto/**"
+      ],
+      "inputs": [
+        "../../../protocol/**/*.proto",
+        "scripts/**"
+      ]
+    },
+    "bench": {
+      "outputs": [
+        "bench-results/**"
+      ]
+    },
+    "analyze": {
+      "outputs": [
+        "bundle-analyzer/**"
+      ]
+    }
+  },
+  "globalDependencies": [
+    "**/.env",
+    "**/.env.*",
+    "!**/.env.*.local"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "API_URL",
+    "WS_URL"
+  ]
+}
