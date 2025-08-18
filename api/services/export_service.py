@@ -24,8 +24,7 @@ class ExportService:
         self.export_dir = Path("/tmp/mev_exports")
         self.export_dir.mkdir(parents=True, exist_ok=True)
         
-        # Start cleanup task
-        asyncio.create_task(self._cleanup_old_exports())
+        self._cleanup_task = None
     
     async def export_dataset(
         self,
@@ -283,6 +282,22 @@ class ExportService:
         user_jobs.sort(key=lambda x: x["started_at"], reverse=True)
         
         return user_jobs[:limit]
+    
+    async def startup(self):
+        """Start background maintenance tasks"""
+        if getattr(self, "_cleanup_task", None) is None:
+            self._cleanup_task = asyncio.create_task(self._cleanup_old_exports())
+    
+    async def shutdown(self):
+        """Stop background maintenance tasks"""
+        task = getattr(self, "_cleanup_task", None)
+        if task:
+            task.cancel()
+            try:
+                await task
+            except Exception:
+                pass
+            self._cleanup_task = None
     
     def cancel_job(self, job_id: str):
         """Cancel running export job"""
