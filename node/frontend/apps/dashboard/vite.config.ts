@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import viteCompression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import { createHash } from 'crypto';
 
 export default defineConfig(({ mode }) => {
@@ -12,6 +13,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     plugins: [
+      tsconfigPaths(),
       react({
         jsxImportSource: '@emotion/react',
         plugins: [['@swc/plugin-emotion', {}]],
