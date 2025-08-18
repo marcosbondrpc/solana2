@@ -63,18 +63,19 @@ async function generateFingerprint(
 }
 
 // Build Merkle tree
-function buildMerkleTree(hashes: string[]): string {
+async function buildMerkleTree(hashes: string[]): Promise<string> {
   if (hashes.length === 0) return '';
-  if (hashes.length === 1) return hashes[0];
+  if (hashes.length === 1) return hashes[0] ?? '';
   
-  const pairs = [];
+  const pairs: Promise<string>[] = [];
   for (let i = 0; i < hashes.length; i += 2) {
-    const left = hashes[i];
-    const right = hashes[i + 1] || hashes[i];
+    const left = hashes[i] ?? '';
+    const right = hashes[i + 1] ?? left;
     pairs.push(blake3Hash(left + right));
   }
   
-  return Promise.all(pairs).then(newHashes => buildMerkleTree(newHashes));
+  const newHashes = await Promise.all(pairs);
+  return buildMerkleTree(newHashes);
 }
 
 export default function DecisionDNA() {

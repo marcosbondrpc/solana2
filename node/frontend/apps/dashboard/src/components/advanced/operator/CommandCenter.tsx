@@ -67,7 +67,7 @@ class OutputBuffer {
   
   getLines(count: number): string[] {
     const start = Math.max(0, this.writePos - count);
-    const lines = [];
+    const lines: string[] = [];
     for (let i = start; i < this.writePos; i++) {
       const line = this.buffer[i % this.capacity];
       if (line !== undefined) lines.push(line);
@@ -145,9 +145,11 @@ export default function CommandCenter() {
       ws.onmessage = (event) => {
         const buffer = outputBuffers.get(id);
         if (buffer) {
-          const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-          const line = `[${timestamp}] ${event.data}`;
-          buffer.push(line);
+          const iso = new Date().toISOString();
+          const tIndex = iso.indexOf('T');
+          const dotIndex = iso.indexOf('.');
+          const timestamp = tIndex !== -1 && dotIndex !== -1 ? iso.slice(tIndex + 1, dotIndex) : iso;
+          buffer.push(`[${timestamp}] ${event.data}`);
           
           // Update pane output
           const pane = commandState.panes.find(p => p.id === id);
@@ -297,20 +299,25 @@ export default function CommandCenter() {
         break;
         
       case 'layout':
-        const mode = args[0] as 'horizontal' | 'vertical' | 'grid';
-        if (['horizontal', 'vertical', 'grid'].includes(mode)) {
-          setLayout(mode);
-          buffer.push(`Layout changed to ${mode}`);
+        {
+          const modeArg = args[0];
+          if (modeArg === 'horizontal' || modeArg === 'vertical' || modeArg === 'grid') {
+            setLayout(modeArg);
+            buffer.push(`Layout changed to ${modeArg}`);
+          }
         }
         break;
         
       case 'switch':
-        const paneId = args[0];
-        const targetPane = commandState.panes.find(p => p.id === paneId);
-        if (targetPane) {
-          commandState.activePane = paneId;
-          commandState.panes.forEach(p => p.active = p.id === paneId);
-          buffer.push(`Switched to ${targetPane.title}`);
+        {
+          const paneId = args[0];
+          if (!paneId) break;
+          const targetPane = commandState.panes.find(p => p.id === paneId);
+          if (targetPane) {
+            commandState.activePane = paneId;
+            commandState.panes.forEach(p => p.active = p.id === paneId);
+            buffer.push(`Switched to ${targetPane.title}`);
+          }
         }
         break;
         
@@ -363,7 +370,7 @@ export default function CommandCenter() {
           commandState.historyIndex++;
           const historyCommand = commandState.commandHistory[
             commandState.commandHistory.length - 1 - commandState.historyIndex
-          ];
+          ] ?? '';
           commandState.currentCommand = historyCommand;
           if (inputRef.current) {
             inputRef.current.value = historyCommand;
@@ -377,7 +384,7 @@ export default function CommandCenter() {
           commandState.historyIndex--;
           const historyCommand = commandState.commandHistory[
             commandState.commandHistory.length - 1 - commandState.historyIndex
-          ];
+          ] ?? '';
           commandState.currentCommand = historyCommand;
           if (inputRef.current) {
             inputRef.current.value = historyCommand;

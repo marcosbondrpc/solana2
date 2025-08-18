@@ -67,7 +67,9 @@ class TimeSeriesBuffer {
     const start = Math.max(0, this.writePos - count);
     for (let i = start; i < this.writePos; i++) {
       const idx = i % this.capacity;
-      result.push([this.timestamps[idx], this.buffer[idx]]);
+      const ts = this.timestamps[idx] ?? 0;
+      const val = this.buffer[idx] ?? 0;
+      result.push([ts, val]);
     }
     return result;
   }
