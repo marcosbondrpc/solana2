@@ -1,0 +1,26 @@
+[package]
+name = "mev-proto"
+version = "0.1.0"
+edition = "2021"
+description = "Ultra-optimized protobuf definitions for SOTA MEV infrastructure"
+authors = ["Solana MEV Team"]
+
+[dependencies]
+protobuf = "3.4"
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+
+[features]
+default = ["serde-support"]
+serde-support = ["serde"]
+experimental = []
+
+[lib]
+name = "mev_proto"
+path = "src/lib.rs"
+
+[[bench]]
+name = "proto_benchmark"
+harness = false
