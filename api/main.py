@@ -30,20 +30,20 @@ except Exception:
 import uvicorn
 
 # Import routes
-from api.routes.datasets import router as datasets_router
-from api.routes.clickhouse import router as clickhouse_router
-from api.routes.training import router as training_router
-from api.routes.control import router as control_router
-from api.routes.realtime import router as realtime_router
+from routes.datasets import router as datasets_router
+from routes.clickhouse import router as clickhouse_router
+from routes.training import router as training_router
+from routes.control import router as control_router
+from routes.realtime import router as realtime_router
 
 # Import defensive services
-from api.defensive_integration import router as defensive_router
+from defensive_integration import router as defensive_router
 
 # Import services
-from api.services.clickhouse_client import initialize_clickhouse
+from services.clickhouse_client import initialize_clickhouse
 
 # Import security
-from api.security.audit import AuditMiddleware, audit_logger
+from security.audit import AuditMiddleware, audit_logger
 
 # Metrics
 registry = CollectorRegistry()
@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize Kafka bridge
     try:
-        from api.services.kafka_bridge import initialize_kafka_bridge
+        from services.kafka_bridge import initialize_kafka_bridge
         await initialize_kafka_bridge(
             bootstrap_servers=get_env("KAFKA_SERVERS", "KAFKA") or "localhost:9092",
             group_id="mev-api-consumer"
@@ -121,9 +121,9 @@ async def lifespan(app: FastAPI):
     print("🛑 Shutting down MEV API Server...")
     
     # Cleanup services
-    from api.services.clickhouse_client import clickhouse_pool
+    from services.clickhouse_client import clickhouse_pool
     try:
-        from api.services.kafka_bridge import kafka_bridge
+        from services.kafka_bridge import kafka_bridge
     except Exception:
         kafka_bridge = None
     
@@ -217,7 +217,7 @@ async def health_check() -> Dict[str, Any]:
         overall_status = "degraded"
     # Check Kafka
     try:
-        from api.services.kafka_bridge import get_kafka_bridge
+        from services.kafka_bridge import get_kafka_bridge
         bridge = await get_kafka_bridge()
         lag = await bridge.get_consumer_lag()
         total_lag = sum(lag.values())

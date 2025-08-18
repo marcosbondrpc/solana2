@@ -12,8 +12,8 @@ import ed25519
 import hashlib
 import hmac
 import time
-from api.models.schemas import UserRole, TokenResponse
-from api.security.policy import check_permission, Permission, get_role_permissions
+from models.schemas import UserRole, TokenResponse
+from security.policy import check_permission, Permission, get_role_permissions
 
 
 # Configuration
@@ -198,7 +198,7 @@ class RateLimiter:
     
     def check_rate_limit(self, user_id: str, role: UserRole, window_seconds: int = 60) -> bool:
         """Check if user is within rate limit"""
-        from api.security.policy import get_rate_limit
+        from security.policy import get_rate_limit
         
         now = time.time()
         limit = get_rate_limit(role)
