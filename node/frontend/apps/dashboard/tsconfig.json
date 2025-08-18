@@ -11,6 +11,9 @@
     "noImplicitAny": false,
     "skipLibCheck": true,
     "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
     "baseUrl": ".",
     "types": ["vite/client", "node"],
     "paths": {

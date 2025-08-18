@@ -373,10 +373,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         } else {
           // Process immediately via worker
           if (workerRef.current) {
+            const buf = event.data as ArrayBuffer;
             workerRef.current.postMessage({
               type: 'decode',
-              buffer: event.data
-            }, [event.data]);
+              buffer: buf
+            }, [buf]);
           }
         }
       } else {

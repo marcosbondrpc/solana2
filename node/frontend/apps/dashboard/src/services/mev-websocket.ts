@@ -69,7 +69,7 @@ class MEVWebSocketService extends EventEmitter {
     
     try {
       // Add compression and binary protocol headers
-      const protocols = [];
+      const protocols: string[] = [];
       if (this.compression) protocols.push('permessage-deflate');
       
       this.ws = new WebSocket(this.url, protocols);
@@ -373,15 +373,17 @@ class MEVWebSocketService extends EventEmitter {
       if (this.binaryProtocol) {
         // Use MessagePack for binary encoding
         const encoded = encode(message);
-        data = encoded.buffer.slice(
+        const buffer = encoded.buffer.slice(
           encoded.byteOffset,
           encoded.byteOffset + encoded.byteLength
         );
-        this.stats.bytesSent += data.byteLength;
+        data = buffer;
+        this.stats.bytesSent += (buffer as ArrayBuffer).byteLength;
       } else {
         // Fallback to JSON
-        data = JSON.stringify(message);
-        this.stats.bytesSent += data.length;
+        const json = JSON.stringify(message);
+        data = json;
+        this.stats.bytesSent += json.length;
       }
       
       this.ws.send(data);

@@ -111,6 +111,8 @@ interface BanditState {
   rebalanceBudget: () => void;
   getArmStats: (armId: string) => any;
   getBestArm: () => BanditArm | null;
+  updateState: (data: any) => void;
+  updatePrediction: (data: any) => void;
   reset: () => void;
 }
 
@@ -397,6 +399,22 @@ export const useBanditStore = create<BanditState>()(
           }
           
           return bestArm;
+        },
+        
+        updateState: (data) => {
+          if (data) {
+            set((state) => {
+              state.samplingState.epoch = state.samplingState.epoch;
+            });
+          }
+        },
+        
+        updatePrediction: (data) => {
+          if (data) {
+            set((state) => {
+              state.totalDecisions = state.totalDecisions;
+            });
+          }
         },
         
         reset: () => {

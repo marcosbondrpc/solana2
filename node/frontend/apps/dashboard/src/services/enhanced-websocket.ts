@@ -13,11 +13,6 @@ interface ProtobufDecoder {
   decode(data: ArrayBuffer): any;
 }
 
-// WebTransport support (when available)
-interface WebTransportOptions {
-  url: string;
-  serverCertificateHashes?: Array<{ algorithm: string; value: string }>;
-}
 
 export class EnhancedWebSocketService {
   private sockets: Map<string, Socket> = new Map();
@@ -410,7 +405,7 @@ export class EnhancedWebSocketService {
     }
   }
 
-  private handleBinaryMessage(service: string, data: ArrayBuffer): void {
+  private handleBinaryMessage(service: string, data: ArrayBufferLike): void {
     const decoder = this.protobufDecoders.get(service);
     
     if (decoder) {
