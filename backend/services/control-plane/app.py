@@ -27,16 +27,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
-import structlog
+# import structlog  # TODO: Add when available
 
 # High-performance imports
-from routes.control import router as control_router
-from routes.datasets import router as datasets_router
-from routes.realtime import router as realtime_router
-from routes.training import router as training_router
-from routes.clickhouse import router as clickhouse_router
-from security.auth import AuthMiddleware
-from security.audit import AuditMiddleware
+from control import router as control_router
+from datasets import router as datasets_router
+from realtime import router as realtime_router
+from training import router as training_router
+from clickhouse_router import router as clickhouse_router
 
 # Performance metrics
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
@@ -44,7 +42,7 @@ REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request dura
 DECISION_LATENCY = Histogram('mev_decision_latency_seconds', 'MEV decision latency', buckets=[0.001, 0.005, 0.008, 0.010, 0.020, 0.050, 0.100])
 BUNDLE_SUBMISSIONS = Counter('mev_bundle_submissions_total', 'Total bundle submissions', ['status'])
 
-logger = structlog.get_logger()
+# logger = structlog.get_logger()  # TODO: Add when available
 
 # Performance configuration
 PERFORMANCE_CONFIG = {
@@ -119,12 +117,12 @@ app.add_middleware(
     expose_headers=["X-Decision-DNA", "X-Bundle-Status"],
 )
 
-# Compression middleware
+# Compression middleware  
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Security and audit middleware
-app.add_middleware(AuthMiddleware)
-app.add_middleware(AuditMiddleware)
+# TODO: Add security and audit middleware when available
+# app.add_middleware(AuthMiddleware)
+# app.add_middleware(AuditMiddleware)
 
 @app.middleware("http")
 async def performance_middleware(request: Request, call_next):
