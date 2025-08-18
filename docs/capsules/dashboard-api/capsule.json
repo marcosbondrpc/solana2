@@ -1,0 +1,63 @@
+{
+  "name": "dashboard-api",
+  "version": "1.0.0",
+  "description": "High-performance API service for real-time MEV dashboard and analytics",
+  "type": "rust-service",
+  "port": 8001,
+  "health_endpoint": "/health",
+  "metrics_endpoint": "/metrics",
+  "dependencies": [
+    "clickhouse",
+    "redis",
+    "kafka"
+  ],
+  "capabilities": [
+    "real-time-data-streaming",
+    "historical-analytics",
+    "performance-metrics",
+    "decision-dna-queries",
+    "websocket-streaming",
+    "rest-api"
+  ],
+  "performance_targets": {
+    "api_latency_p99_ms": 100,
+    "throughput_requests_per_sec": 50000,
+    "websocket_messages_per_sec": 100000,
+    "concurrent_connections": 10000
+  },
+  "security": {
+    "authentication": "jwt",
+    "authorization": "rbac",
+    "rate_limiting": true,
+    "input_validation": true
+  },
+  "monitoring": {
+    "prometheus_metrics": true,
+    "distributed_tracing": true,
+    "custom_metrics": [
+      "query_performance",
+      "cache_hit_ratio",
+      "websocket_connection_count"
+    ],
+    "alerting": true
+  },
+  "deployment": {
+    "container_image": "mev/dashboard-api:latest",
+    "cpu_limit": "4000m",
+    "memory_limit": "8Gi",
+    "replicas": 3,
+    "auto_scaling": true
+  },
+  "documentation": [
+    "index.md",
+    "env.md",
+    "api.md",
+    "websocket.md"
+  ],
+  "tags": [
+    "api",
+    "dashboard",
+    "real-time",
+    "analytics"
+  ]
+}
