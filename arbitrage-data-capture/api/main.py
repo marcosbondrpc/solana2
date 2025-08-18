@@ -232,13 +232,16 @@ def create_app() -> FastAPI:
     from .training import router as training_router
     from .health import router as health_router
     from .mev_core import router as mev_router
+    from .clickhouse_router import router as clickhouse_router
     
+    # Mount all routers under /api/* prefixes
     app.include_router(control_router, prefix="/api/control", tags=["control"])
     app.include_router(realtime_router, prefix="/api/realtime", tags=["realtime"])
     app.include_router(datasets_router, prefix="/api/datasets", tags=["datasets"])
     app.include_router(training_router, prefix="/api/training", tags=["training"])
     app.include_router(health_router, prefix="/api/health", tags=["health"])
     app.include_router(mev_router, prefix="/api/mev", tags=["mev"])
+    app.include_router(clickhouse_router, prefix="/api/clickhouse", tags=["clickhouse"])
     
     @app.get("/")
     async def root():
