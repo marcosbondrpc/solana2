@@ -1,0 +1,117 @@
+[Unit]
+Description=Solana MEV Control Plane - Ultra-High-Performance API
+Documentation=https://github.com/marcosbondrpc/solana2
+After=network.target redis.service clickhouse-server.service kafka.service
+Wants=redis.service clickhouse-server.service kafka.service
+PartOf=mev-stack.target
+
+[Service]
+Type=forking
+User=mev
+Group=mev
+WorkingDirectory=/home/kidgordones/0solana/solana2/arbitrage-data-capture
+ExecStartPre=/bin/bash -c 'source /home/kidgordones/0solana/solana2/venv/bin/activate && python -c "import uvicorn; print(\"Dependencies OK\")"'
+ExecStart=/home/kidgordones/0solana/solana2/venv/bin/python -m uvicorn api.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --loop uvloop \
+    --log-level info \
+    --access-log \
+    --use-colors false \
+    --server-header false \
+    --date-header false \
+    --limit-concurrency 10000 \
+    --limit-max-requests 1000000 \
+    --timeout-keep-alive 5 \
+    --timeout-notify 60 \
+    --timeout-graceful-shutdown 10 \
+    --backlog 2048 \
+    --max-workers 8
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -TERM $MAINPID
+KillMode=mixed
+TimeoutStartSec=30
+TimeoutStopSec=10
+RestartSec=1
+Restart=always
+RestartKillSignal=SIGINT
+
+# Performance and security hardening
+CPUSchedulingPolicy=1
+CPUSchedulingPriority=50
+IOSchedulingClass=1
+IOSchedulingPriority=4
+Nice=-10
+
+# Memory management
+MemoryAccounting=yes
+MemoryMax=8G
+MemorySwapMax=1G
+
+# Security restrictions
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/home/kidgordones/0solana/solana2/arbitrage-data-capture/logs
+ReadWritePaths=/tmp/models
+ReadWritePaths=/tmp/exports
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Network restrictions
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+IPAccounting=yes
+
+# File system restrictions
+ProtectKernelLogs=yes
+ProtectClock=yes
+LockPersonality=yes
+RemoveIPC=yes
+RestrictSUIDSGID=yes
+
+# Environment variables
+Environment=PYTHONPATH=/home/kidgordones/0solana/solana2/arbitrage-data-capture
+Environment=PYTHONUNBUFFERED=1
+Environment=UVLOOP_DEBUG=0
+Environment=ASYNCIO_DEBUG=0
+Environment=LOG_LEVEL=INFO
+Environment=API_PORT=8000
+Environment=API_WORKERS=4
+Environment=RATE_LIMIT_PER_SECOND=1000
+Environment=RATE_LIMIT_BURST=2000
+Environment=BATCH_WINDOW_MS=15
+Environment=BATCH_MAX_SIZE=256
+Environment=BACKPRESSURE_THRESHOLD=1000
+Environment=EXPORT_DIR=/tmp/exports
+Environment=MODEL_DIR=/tmp/models
+
+# ClickHouse connection
+Environment=CLICKHOUSE_HOST=localhost
+Environment=CLICKHOUSE_PORT=8123
+Environment=CLICKHOUSE_USER=default
+Environment=CLICKHOUSE_PASSWORD=
+Environment=CLICKHOUSE_DATABASE=mev
+
+# Kafka connection
+Environment=KAFKA_BROKERS=localhost:9092
+
+# Redis connection
+Environment=REDIS_URL=redis://localhost:6379/0
+
+# Control plane settings
+Environment=CTRL_PUBKEY_ID=mev-control
+Environment=ENABLE_WEBTRANSPORT=false
+Environment=TRANSPORT_MODE=proto
+Environment=HEDGED_SEND=on
+Environment=KILL_SWITCH=on
+Environment=DNA_TRACKING=on
+
+[Install]
+WantedBy=multi-user.target
+WantedBy=mev-stack.target
