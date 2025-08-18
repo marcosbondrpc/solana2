@@ -1,0 +1,91 @@
+{
+  "name": "@solana-mev/frontend-monorepo",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Legendary Solana MEV Frontend - Ultra-High Performance DeFi Dashboard Monorepo",
+  "author": "MEV Engineering Team",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=!@solana-mev/api-client",
+    "build": "turbo run build",
+    "build:dashboard": "turbo run build --filter=@solana-mev/dashboard",
+    "build:operator": "turbo run build --filter=@solana-mev/operator",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "deps:update": "pnpm update --recursive",
+    "deps:dedupe": "pnpm dedupe",
+    "proto:gen": "turbo run proto:gen",
+    "bench": "turbo run bench",
+    "analyze": "turbo run analyze",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.3.0",
+    "turbo": "^2.3.0",
+    "prettier": "^3.3.3",
+    "@types/node": "^22.9.1",
+    "typescript": "^5.9.2"
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": ["^build"],
+        "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+        "env": ["NODE_ENV", "API_URL", "WS_URL", "VITE_*"]
+      },
+      "dev": {
+        "cache": false,
+        "persistent": true,
+        "env": ["NODE_ENV", "API_URL", "WS_URL", "VITE_*"]
+      },
+      "lint": {
+        "dependsOn": ["^build"],
+        "outputs": []
+      },
+      "typecheck": {
+        "dependsOn": ["^build"],
+        "outputs": []
+      },
+      "test": {
+        "dependsOn": ["^build"],
+        "outputs": ["coverage/**"],
+        "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "__tests__/**/*.ts"]
+      },
+      "clean": {
+        "cache": false
+      },
+      "proto:gen": {
+        "outputs": ["src/proto/**"],
+        "inputs": ["../protocol/**/*.proto"]
+      }
+    }
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.23",
+      "@types/react-dom": "^18.3.7"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}
