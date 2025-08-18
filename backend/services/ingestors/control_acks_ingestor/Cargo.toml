@@ -1,19 +1,19 @@
 [package]
 name = "control_acks_ingestor"
-version = "1.0.0"
-edition = "2021"
-authors = ["MEV Infrastructure Team"]
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
 description = "LEGENDARY Control ACKs Ingestor - Kafka to ClickHouse with hash-chain verification"
 
 [dependencies]
 # Async runtime
-tokio = { version = "1.40", features = ["full"] }
+tokio.workspace = true
 
 # Kafka
-rdkafka = { version = "0.36", features = ["tokio", "tracing"] }
+rdkafka.workspace = true
 
 # ClickHouse
-clickhouse = { version = "0.12", features = ["tokio", "native-tls"] }
+clickhouse.workspace = true
 
 # Protobuf
 prost = "0.13"

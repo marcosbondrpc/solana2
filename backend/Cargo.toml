@@ -1,30 +1,11 @@
 [workspace]
 members = [
     # Core MEV Services
-    "services/mev-engine",
-    "services/sandwich-detector",
-    "services/arbitrage-engine",
-    "services/arbitrage-detector",
-    "services/data-ingestion",
-    "services/node-metrics",
-    "services/data-scrapper",
-    "services/mission-control",
-    "services/mission-control-lite",
-    "services/historical-scrapper",
-    "services/dex-registry",
-    "services/execution-engine",
-    "services/risk-engine",
-    "jito-engine",
-    "jito-block-engine",
-    "shared-types",
-    "dex-parser",
-    "arbitrage-engine",
+    "services/mev-engine-rust",
+    "services/ingestors/control_acks_ingestor",
     
     # Shared Libraries
-    "shared/rust-common",
-    "shared/strategy",
-    "main-service",
-    "services/dashboard-api"
+    "libs/rust/shared",
 ]
 resolver = "2"
 
