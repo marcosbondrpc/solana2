@@ -18,8 +18,10 @@ fe2-start:
 # Legendary MEV Infrastructure
 legendary:
 	@echo "🚀 Bootstrapping LEGENDARY MEV Infrastructure..."
-	@make historical-infra
 	@make proto
+	@make historical-infra
+	@make backend-build
+	@make frontend-build
 	@make models-super
 	@make pgo-mev
 	@echo "✅ System ready for BILLIONS in volume!"
@@ -123,7 +125,89 @@ historical-clean:
 # Protocol Buffers
 proto:
 	@echo "📦 Generating protobuf code..."
-	@cd protocol && make generate
+	@cd backend/proto && make all
+	@echo "✅ Protobuf generation complete"
+
+# Frontend Development Commands  
+frontend-dev:
+	@echo "🚀 Starting frontend development servers..."
+	@cd frontend && npm run dev
+
+frontend-build:
+	@echo "🏗️ Building frontend applications..."
+	@cd frontend && npm run build
+
+frontend-test:
+	@echo "🧪 Testing frontend applications..."
+	@cd frontend && npm run test
+
+# Backend Development Commands
+backend-dev:
+	@echo "🦀 Starting backend development services..."
+	@cd backend && cargo run --bin main-service &
+	@cd backend && cargo run --bin mev-engine &
+	@cd backend && cargo run --bin dashboard-api &
+	@echo "✅ Backend services started"
+
+backend-build:
+	@echo "🏗️ Building backend services..."
+	@cd backend && cargo build --release --workspace
+
+backend-test:
+	@echo "🧪 Testing backend services..."
+	@cd backend && cargo test --release --workspace
+
+backend-bench:
+	@echo "⚡ Running backend benchmarks..."
+	@cd backend && cargo bench --workspace
+
+# Development Workflow
+dev:
+	@echo "🚀 Starting complete development environment..."
+	@make proto
+	@make backend-dev &
+	@make frontend-dev &
+	@echo "✅ Development environment ready"
+
+build:
+	@echo "🏗️ Building complete system..."
+	@make proto
+	@make backend-build
+	@make frontend-build
+	@echo "✅ Build complete"
+
+test:
+	@echo "🧪 Running all tests..."
+	@make backend-test
+	@make frontend-test
+	@echo "✅ All tests complete"
+
+# Service Management
+services-start:
+	@echo "🚀 Starting all services..."
+	@make sota-up
+
+services-stop:
+	@echo "⏸️ Stopping all services..."
+	@make sota-down
+
+services-restart:
+	@echo "🔄 Restarting all services..."
+	@make services-stop
+	@sleep 5
+	@make services-start
+
+services-logs:
+	@echo "📜 Showing service logs..."
+	@docker-compose -f docker-compose.sota.yml logs -f --tail=100
+
+# Integration Testing
+integration-test:
+	@echo "🔗 Running integration tests..."
+	@make services-start
+	@sleep 30
+	@python tests/test_full_integration.py
+	@echo "✅ Integration tests complete"
 
 # System Monitoring
 monitor:

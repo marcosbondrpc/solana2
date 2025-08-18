@@ -8,13 +8,20 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
+    "type-check": "turbo run type-check", 
     "clean": "turbo run clean",
+    "proto:generate": "turbo run proto:generate",
     "lab-smoke-test": "make lab-smoke-test",
     "frontend:dev": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && turbo run build",
+    "backend:dev": "make backend-dev",
+    "backend:build": "cd backend && cargo build --release",
+    "backend:test": "cd backend && cargo test --release",
     "dashboard:dev": "cd frontend/apps/dashboard && npm run dev",
-    "operator:dev": "cd frontend/apps/operator && npm run dev"
+    "operator:dev": "cd frontend/apps/operator && npm run dev",
+    "services:start": "make sota-up",
+    "services:stop": "make sota-down",
+    "services:health": "make sota-health"
   },
   "workspaces": [
     "frontend/apps/*",

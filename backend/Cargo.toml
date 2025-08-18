@@ -130,6 +130,8 @@ ort = { version = "2.0.0-rc.10", features = [] }
 
 # gRPC/Protobuf
 prost = "0.13"
+protobuf = "3.4"
+tonic-build = "0.12"
 
 # Additional utilities
 chrono = { version = "0.4", features = ["serde"] }
