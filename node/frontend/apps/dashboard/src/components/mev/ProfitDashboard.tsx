@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState } from 'react';
 import { useMEVStore, selectProfitTrend } from '@/stores/mev-store';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Progress } from '@/components/ui/Progress';
 import ReactECharts from 'echarts-for-react';
 import {
   DollarSign,

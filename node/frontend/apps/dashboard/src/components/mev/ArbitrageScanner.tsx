@@ -3,10 +3,10 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useMEVStore, selectActiveOpportunities, ArbitrageOpportunity } from '@/stores/mev-store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Progress } from '@/components/ui/Progress';
 import { 
   TrendingUp, 
   TrendingDown, 

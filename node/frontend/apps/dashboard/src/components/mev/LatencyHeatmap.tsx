@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useMEVStore, selectLatencyStats } from '@/stores/mev-store';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import * as d3 from 'd3';
 import { 
   Zap, 

@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { useMonitoringStore } from '@/lib/monitoring-store';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export const SecurityPanel = memo(() => {
   const security = useMonitoringStore((state) => state.security);
