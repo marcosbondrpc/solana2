@@ -1,0 +1,66 @@
+{
+  "name": "mev-engine",
+  "version": "1.0.0", 
+  "description": "Ultra-high performance MEV execution engine with sub-millisecond decision latency",
+  "type": "rust-service",
+  "port": 8002,
+  "health_endpoint": "/health",
+  "metrics_endpoint": "/metrics",
+  "dependencies": [
+    "jito-block-engine",
+    "execution-engine",
+    "arbitrage-engine", 
+    "clickhouse",
+    "redis"
+  ],
+  "capabilities": [
+    "opportunity-detection",
+    "bundle-construction",
+    "jito-integration",
+    "path-optimization",
+    "risk-assessment",
+    "real-time-execution"
+  ],
+  "performance_targets": {
+    "decision_latency_p50_us": 8000,
+    "decision_latency_p99_us": 20000,
+    "bundle_land_rate_pct": 65,
+    "throughput_opportunities_per_sec": 100000
+  },
+  "security": {
+    "transaction_signing": "ed25519",
+    "bundle_encryption": "aes-256",
+    "access_control": "jwt",
+    "audit_logging": true
+  },
+  "monitoring": {
+    "prometheus_metrics": true,
+    "distributed_tracing": true,
+    "custom_metrics": [
+      "bundle_success_rate",
+      "profit_per_bundle",
+      "decision_dna_lineage"
+    ],
+    "alerting": true
+  },
+  "deployment": {
+    "container_image": "mev/engine:latest",
+    "cpu_limit": "8000m",
+    "memory_limit": "16Gi",
+    "replicas": 1,
+    "cpu_affinity": true,
+    "numa_binding": true
+  },
+  "documentation": [
+    "index.md",
+    "env.md",
+    "commands.md", 
+    "architecture.md"
+  ],
+  "tags": [
+    "execution",
+    "high-performance", 
+    "critical",
+    "low-latency"
+  ]
+}
