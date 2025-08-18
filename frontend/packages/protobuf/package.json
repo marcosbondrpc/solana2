@@ -6,6 +6,9 @@
   "types": "./src/index.ts",
   "sideEffects": false,
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "proto:generate": "cd ../../../backend/proto && make typescript",
     "proto:compile": "pbjs -t static-module -w es6 -o src/proto/messages.js src/proto/*.proto && pbts -o src/proto/messages.d.ts src/proto/messages.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
@@ -16,11 +19,14 @@
   },
   "dependencies": {
     "@solana-mev/utils": "workspace:*",
+    "@protobuf-ts/runtime": "^2.9.1",
+    "@protobuf-ts/runtime-rpc": "^2.9.1",
     "protobufjs": "^7.2.5",
     "long": "^5.2.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@protobuf-ts/plugin": "^2.9.1",
     "eslint": "^8.56.0",
     "protobufjs-cli": "^1.1.2",
     "typescript": "^5.3.3",
