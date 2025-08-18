@@ -8,7 +8,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import ed25519
+from nacl.signing import VerifyKey
+from nacl.exceptions import BadSignatureError
 import hashlib
 import hmac
 import time
@@ -93,10 +94,9 @@ def verify_ed25519_signature(
 ) -> bool:
     """Verify Ed25519 signature for critical operations"""
     try:
-        verifying_key = ed25519.VerifyingKey(public_key)
-        verifying_key.verify(signature, message)
+        VerifyKey(public_key).verify(message, signature)
         return True
-    except ed25519.BadSignatureError:
+    except BadSignatureError:
         return False
     except Exception:
         return False
