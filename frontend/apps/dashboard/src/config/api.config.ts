@@ -4,9 +4,9 @@
  */
 
 export const API_CONFIG = {
-  // Base URLs
-  API_BASE_URL: process.env.VITE_API_BASE_URL || 'http://localhost:8085',
-  WS_BASE_URL: process.env.VITE_WS_BASE_URL || 'ws://localhost:8085',
+  // Base URLs - Updated to match CLAUDE.md backend configuration
+  API_BASE_URL: process.env.VITE_API_BASE_URL || 'http://45.157.234.184:8000',
+  WS_BASE_URL: process.env.VITE_WS_BASE_URL || 'ws://45.157.234.184:8000',
   
   // API Endpoints
   endpoints: {
@@ -29,19 +29,34 @@ export const API_CONFIG = {
       config: '/api/scrapper/config',
     },
     
-    // MEV
+    // MEV - Updated for legendary backend
     mev: {
-      opportunities: '/api/mev/opportunities',
-      bundles: '/api/mev/bundles',
-      transactions: '/api/mev/transactions',
+      opportunities: '/api/realtime/opportunities',
+      bundles: '/api/realtime/bundles',
+      transactions: '/api/realtime/transactions',
+      detections: '/api/realtime/detections',
+      metrics: '/api/metrics',
+      control: '/api/control',
+      datasets: '/api/datasets',
+      training: '/api/training',
+    },
+    
+    // ClickHouse Analytics
+    analytics: {
+      query: '/api/clickhouse/query',
+      health: '/api/health',
+      metrics: '/api/metrics',
     },
   },
   
-  // WebSocket Endpoints
+  // WebSocket Endpoints - Updated for legendary backend
   ws: {
     nodeMetrics: '/ws/node-metrics',
-    scrapperProgress: '/ws/scrapper-progress',
+    scrapperProgress: '/ws/scrapper-progress', 
     mevStream: '/ws/mev-stream',
+    realtime: '/ws/realtime',
+    detections: '/ws/detections',
+    control: '/ws/control',
   },
   
   // Request Configuration
