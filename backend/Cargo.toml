@@ -3,9 +3,35 @@ members = [
     # Core MEV Services
     "services/mev-engine-rust",
     "services/ingestors/control_acks_ingestor",
+    "services/arbitrage-engine",
+    "services/execution-engine", 
+    "services/dashboard-api",
+    "services/data-ingestion",
+    "services/historical-scrapper",
+    "services/sandwich-detector",
+    "services/mev-engine",
+    "services/arbitrage-detector",
+    "services/data-scrapper",
+    "services/mission-control",
+    "services/ml-inference",
+    "services/node-metrics",
     
     # Shared Libraries
     "libs/rust/shared",
+    "libs/rust/proto",
+    "shared",
+    "shared-types",
+    
+    # Core Services
+    "alert-system",
+    "arbitrage-engine",
+    "dex-parser",
+    "jito-block-engine",
+    "jito-engine", 
+    "main-service",
+    "metrics-collector",
+    "optimizer",
+    "quic-service",
 ]
 resolver = "2"
 

@@ -1,16 +1,28 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": ["**/.env.*local", "backend/proto/defs/*.proto"],
   "pipeline": {
+    "proto:generate": {
+      "cache": false,
+      "inputs": ["backend/proto/defs/*.proto"],
+      "outputs": [
+        "backend/proto/gen/**",
+        "backend/libs/rust/proto/src/**",
+        "frontend/packages/protobuf/src/*.ts"
+      ]
+    },
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "proto:generate"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
       "env": [
         "NEXT_PUBLIC_*",
         "VITE_*",
         "NODE_ENV",
         "VERCEL_URL",
-        "PORT"
+        "PORT",
+        "CLICKHOUSE_HOST",
+        "REDIS_URL",
+        "KAFKA_BROKERS"
       ]
     },
     "dev": {
