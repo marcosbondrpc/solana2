@@ -206,8 +206,32 @@ integration-test:
 	@echo "🔗 Running integration tests..."
 	@make services-start
 	@sleep 30
-	@python tests/test_full_integration.py
+	@./tests/integration/test_suite.sh
 	@echo "✅ Integration tests complete"
+
+# Performance Testing
+performance-test:
+	@echo "⚡ Running performance benchmarks..."
+	@make services-start
+	@sleep 30
+	@cd tests/performance && python3 benchmark_latency.py
+	@echo "✅ Performance tests complete"
+
+# Full Test Suite
+test-all:
+	@echo "🧪 Running complete test suite..."
+	@make proto
+	@make backend-test
+	@make frontend-test
+	@make integration-test
+	@make performance-test
+	@echo "✅ All tests complete"
+
+# Quick Health Check
+health-check-full:
+	@echo "🏥 Comprehensive health check..."
+	@./tests/integration/test_suite.sh
+	@echo "✅ Health check complete"
 
 # System Monitoring
 monitor:
