@@ -25,7 +25,7 @@ import {
   RocketOutlined,
   ThunderboltOutlined,
   SafetyOutlined,
-  NetworkOutlined,
+  ForkOutlined,
   DatabaseOutlined,
   MonitorOutlined,
   ApiOutlined,
@@ -409,8 +409,9 @@ export default function MEVControlCenter() {
       if (e.altKey && e.key >= '1' && e.key <= '5') {
         const tabs = ['overview', 'bandit', 'dna', 'monitoring', 'lab'];
         const index = parseInt(e.key) - 1;
-        if (index < tabs.length) {
-          setSelectedTab(tabs[index]);
+        const tab = tabs[index];
+        if (tab) {
+          setSelectedTab(tab);
         }
       }
       
@@ -766,7 +767,7 @@ export default function MEVControlCenter() {
   // Decision DNA Tab
   const DNATab = () => (
     <div>
-      <Card title={<><NetworkOutlined /> Decision DNA</> } style={{ marginBottom: 24 }}>
+      <Card title={<><ForkOutlined /> Decision DNA</> } style={{ marginBottom: 24 }}>
         <Row gutter={16}>
           <Col span={6}>
             <Statistic
@@ -1056,7 +1057,7 @@ export default function MEVControlCenter() {
         </TabPane>
         
         <TabPane
-          tab={<span><NetworkOutlined /> Decision DNA</span>}
+          tab={<span><ForkOutlined /> Decision DNA</span>}
           key="dna"
         >
           <DNATab />

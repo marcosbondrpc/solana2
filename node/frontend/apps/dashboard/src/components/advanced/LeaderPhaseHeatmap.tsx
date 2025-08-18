@@ -176,9 +176,10 @@ export default function LeaderPhaseHeatmap() {
     
     heatmapState.slots.forEach(slot => {
       slot.submissions.forEach(sub => {
-        phases[sub.phase].submissions++;
-        if (sub.landed) phases[sub.phase].lands++;
-        phases[sub.phase].totalEv += sub.ev;
+        const idx = Math.max(0, Math.min(heatmapState.config.phaseCount - 1, sub.phase));
+        phases[idx].submissions++;
+        if (sub.landed) phases[idx].lands++;
+        phases[idx].totalEv += sub.ev;
       });
     });
     

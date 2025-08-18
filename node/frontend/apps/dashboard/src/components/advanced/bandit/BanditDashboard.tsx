@@ -281,7 +281,7 @@ export default function BanditDashboard() {
       .text('Average Reward');
     
     // Plot arms
-    const colorScale = d3.scaleOrdinal()
+    const colorScale = d3.scaleOrdinal<string, string>()
       .domain(['Direct', 'Jito'])
       .range(['#00ff00', '#00aaff']);
     
@@ -355,8 +355,8 @@ export default function BanditDashboard() {
         const value = leaderData.get(route) || 0;
         
         svg.append('rect')
-          .attr('x', xScale(route))
-          .attr('y', yScale(leader))
+          .attr('x', xScale(route)!)
+          .attr('y', yScale(leader)!)
           .attr('width', xScale.bandwidth())
           .attr('height', yScale.bandwidth())
           .style('fill', colorScale(value))

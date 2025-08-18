@@ -54,7 +54,7 @@ class MessageBuffer {
   
   getRecent(count: number): any[] {
     const start = Math.max(0, this.writePos - count);
-    const messages = [];
+    const messages: any[] = [];
     for (let i = start; i < this.writePos && messages.length < count; i++) {
       const msg = this.buffer[i % this.capacity];
       if (msg) messages.push(msg);
